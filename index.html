@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#8B5CF6">
+    <meta name="description" content="Recordatorios de oración personalizados basados en tus emociones">
+    <title>Prayer & Verse Reminder</title>
+    
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    
+    <!-- Tailwind CSS -->
+    <!-- <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.0/dist/tailwind.min.css" rel="stylesheet"> -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style type="text/tailwindcss">
+      @theme {
+        --color-clifford: #da373d;
+      }
+    </style>
+    
+    <!-- React -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <style>
+        body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+        .glassmorphism { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
+        .dark .glassmorphism { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); }
+        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .animate-slide-in { animation: slideIn 0.3s ease-out; }
+        .spinner { border: 3px solid rgba(139,92,246,0.3); border-top-color: #8B5CF6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        
+        // Configuración de API
+        const API_BASE = '/api';
+        
+        // Servicio de API
+        const api = {
+            call: async (endpoint, method = 'GET', body = null, token = null) => {
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) headers['Authorization'] = `Bearer ${token}`;
+                
+                const options = { method, headers };
+                if (body && method !== 'GET') options.body = JSON.stringify(body);
+                
+                const response = await fetch(`${API_BASE}${endpoint}`, options);
+                return response.json();
+            }
+        };
+        
+        // Traducciones
+        const translations = {
+            es: {
+                login: 'Iniciar Sesión',
+                register: 'Registrarse',
+                name: 'Nombre',
+                email: 'Email',
+                password: 'Contraseña',
+                noAccount: '¿No tienes cuenta? Regístrate',
+                hasAccount: '¿Ya tienes cuenta? Inicia sesión',
+                home: 'Inicio',
+                history: 'Historial',
+                stats: 'Estadísticas',
+                favorites: 'Favoritos',
+                settings: 'Ajustes',
+                logout: 'Cerrar Sesión',
+                howFeeling: '¿Cómo te sientes hoy?',
+                skip: 'Saltar',
+                submit: 'Enviar',
+                notes: 'Notas opcionales',
+                newVerse: 'Nuevo Versículo',
+                noVerse: 'Toca para obtener un versículo',
+                noHistory: 'Aún no hay historial',
+                noFavorites: 'Aún no tienes favoritos',
+                darkMode: 'Modo Oscuro',
+                language: 'Idioma',
+                save: 'Guardar',
+                emotionalJourney: 'Tu Camino Emocional',
+                checkinsLast30Days: 'Check-ins (últimos 30 días)',
+                currentStreak: 'Racha Actual',
+                days: 'días',
+                loading: 'Cargando...'
+            },
+            en: {
+                login: 'Login',
+                register: 'Register',
+                name: 'Name',
+                email: 'Email',
+                password: 'Password',
+                noAccount: "Don't have an account? Register",
+                hasAccount: 'Already have an account? Login',
+                home: 'Home',
+                history: 'History',
+                stats: 'Statistics',
+                favorites: 'Favorites',
+                settings: 'Settings',
+                logout: 'Logout',
+                howFeeling: 'How are you feeling today?',
+                skip: 'Skip',
+                submit: 'Submit',
+                notes: 'Optional notes',
+                newVerse: 'New Verse',
+                noVerse: 'Tap to get a verse',
+                noHistory: 'No history yet',
+                noFavorites: 'No favorites yet',
+                darkMode: 'Dark Mode',
+                language: 'Language',
+                save: 'Save',
+                emotionalJourney: 'Your Emotional Journey',
+                checkinsLast30Days: 'Check-ins (last 30 days)',
+                currentStreak: 'Current Streak',
+                days: 'days',
+                loading: 'Loading...'
+            }
+        };
+        
+        // Componente Principal
+        const App = () => {
+            const [token, setToken] = useState(localStorage.getItem('prayer_token'));
+            const [user, setUser] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [settings, setSettings] = useState({ language: 'es', dark_mode: false });
+            const [view, setView] = useState('home');
+            
+            // Agregar después de los otros useEffect en MainApp
+            // Optimizar iconos
+            // Inicializar iconos de forma optimizada
+            useEffect(() => {
+                // Primera inicialización inmediata
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+                
+                // Luego cada 2 segundos (más lento que antes pero suficiente)
+                const interval = setInterval(() => {
+                    if (typeof lucide !== 'undefined') {
+                        lucide.createIcons();
+                    }
+                }, 2000); // Cada 2 segundos en vez de 1
+                
+                return () => clearInterval(interval);
+            }, []);
+
+            useEffect(() => {
+                if (token) {
+                    api.call('/auth.php?action=verify', 'GET', null, token)
+                        .then(res => {
+                            console.log('Verify response:', res); // Debug
+                            if (res.success && res.user) {
+                                setUser(res.user);
+                                loadSettings();
+                            } else {
+                                console.error('Token inválido, limpiando...'); // Debug
+                                localStorage.removeItem('prayer_token');
+                                setToken(null);
+                                setUser(null);
+                            }
+                            setLoading(false);
+                        })
+                        .catch((error) => {
+                            console.error('Error verificando token:', error); // Debug
+                            localStorage.removeItem('prayer_token');
+                            setToken(null);
+                            setUser(null);
+                            setLoading(false);
+                        });
+                } else {
+                    setLoading(false);
+                }
+            }, [token]);
+            
+            const loadSettings = async () => {
+                const res = await api.call('/settings.php?action=get', 'GET', null, token);
+                if (res.success) setSettings(res.settings);
+            };
+            
+            const handleAuth = async (isLogin, data) => {
+                const action = isLogin ? 'login' : 'register';
+                const res = await api.call(`/auth.php?action=${action}`, 'POST', data);
+                if (res.success) {
+                    setToken(res.token);
+                    setUser(res.user);
+                    localStorage.setItem('prayer_token', res.token);
+                }
+                return res;
+            };
+            
+            const handleLogout = () => {
+                localStorage.removeItem('prayer_token');
+                setToken(null);
+                setUser(null);
+            };
+            
+            useEffect(() => { lucide.createIcons(); });
+            
+            if (loading) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-blue-100 flex items-center justify-center">
+                        <div className="spinner"></div>
+                    </div>
+                );
+            }
+            
+            if (!token) {
+                return <AuthScreen onAuth={handleAuth} lang={settings.language} />;
+            }
+            
+            return (
+                <MainApp 
+                    user={user}
+                    token={token}
+                    settings={settings}
+                    onLogout={handleLogout}
+                    view={view}
+                    setView={setView}
+                    onSettingsUpdate={setSettings}
+                />
+            );
+        };
+        
+        // Pantalla de Autenticación
+        const AuthScreen = ({ onAuth, lang }) => {
+            const [isLogin, setIsLogin] = useState(true);
+            const [name, setName] = useState('');
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+            const [loading, setLoading] = useState(false);
+            const t = translations[lang];
+            
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setError('');
+                setLoading(true);
+                
+                const data = isLogin ? { email, password } : { name, email, password };
+                const res = await onAuth(isLogin, data);
+                
+                if (!res.success) {
+                    setError(res.error || 'Error occurred');
+                }
+                setLoading(false);
+            };
+            
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-blue-500 flex items-center justify-center p-4">
+                    <div className="w-full max-w-md glassmorphism rounded-3xl p-8 shadow-2xl animate-slide-in">
+                        <div className="text-center mb-8">
+                            <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                                <i data-lucide="book-open" className="w-10 h-10 text-purple-600"></i>
+                            </div>
+                            <h1 className="text-3xl font-bold text-white mb-2">Maná Digital</h1>
+                            <p className="text-white/80">Tu compañero de oración personalizado</p>
+                        </div>
+                        
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            {!isLogin && (
+                                <input
+                                    type="text"
+                                    placeholder={t.name}
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    required
+                                    className="w-full p-4 rounded-xl bg-white/20 border border-white/30 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50"
+                                />
+                            )}
+                            
+                            <input
+                                type="email"
+                                placeholder={t.email}
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                className="w-full p-4 rounded-xl bg-white/20 border border-white/30 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50"
+                            />
+                            
+                            <input
+                                type="password"
+                                placeholder={t.password}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                className="w-full p-4 rounded-xl bg-white/20 border border-white/30 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50"
+                            />
+                            
+                            {error && (
+                                <div className="bg-red-500/20 border border-red-500/50 text-white p-3 rounded-xl text-sm">
+                                    {error}
+                                </div>
+                            )}
+                            
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full bg-white text-purple-600 p-4 rounded-xl font-bold hover:bg-white/90 transition-all disabled:opacity-50"
+                            >
+                                {loading ? t.loading : (isLogin ? t.login : t.register)}
+                            </button>
+                        </form>
+                        
+                        <div className="mt-6 text-center">
+                            <button
+                                onClick={() => {
+                                    setIsLogin(!isLogin);
+                                    setError('');
+                                }}
+                                className="text-white/80 hover:text-white transition-colors"
+                            >
+                                {isLogin ? t.noAccount : t.hasAccount}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+        
+        const MainApp = ({ user, token, settings, onLogout, view, setView, onSettingsUpdate }) => {
+            const [showCheckin, setShowCheckin] = useState(false);
+            const [todayCheckin, setTodayCheckin] = useState(null);
+            const [currentVerse, setCurrentVerse] = useState(null);
+            const [emotions, setEmotions] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [favoritedVerses, setFavoritedVerses] = useState([]); // ← NUEVO
+            const [emotionsCached, setEmotionsCached] = useState(false); // ← NUEVO
+            const dark = settings.dark_mode;
+            const lang = settings.language || 'es';
+            const t = translations[lang];
+            
+            useEffect(() => {
+                loadData();
+            }, []);
+            
+            const loadData = async () => {
+                try {
+                    console.log('⚡ Loading data...');
+                    setLoading(true);
+                    
+                    // Cargar emociones SOLO si no están en caché
+                    let emotionsPromise;
+                    if (!emotionsCached || emotions.length === 0) {
+                        console.log('📥 Cargando emociones desde API...');
+                        emotionsPromise = api.call('/checkin.php?action=emotions', 'GET', null, token);
+                    } else {
+                        console.log('⚡ Usando emociones del caché');
+                        emotionsPromise = Promise.resolve({ success: true, emotions });
+                    }
+                    
+                    // Checkin siempre se carga (puede cambiar)
+                    const checkinPromise = api.call('/checkin.php?action=today', 'GET', null, token);
+                    
+                    const [emotionsRes, checkinRes] = await Promise.all([
+                        emotionsPromise,
+                        checkinPromise
+                    ]);
+                    
+                    if (emotionsRes.success && emotionsRes.emotions) {
+                        setEmotions(emotionsRes.emotions);
+                        setEmotionsCached(true);
+                    }
+                    
+                    if (checkinRes.success) {
+                        setTodayCheckin(checkinRes.checkin);
+                        
+                        if (!checkinRes.has_checkin) {
+                            setShowCheckin(true);
+                        } else {
+                            await loadVerse();
+                        }
+                    }
+                    
+                    // Cargar favoritos (solo una vez)
+                    if (favoritedVerses.length === 0) {
+                        await loadFavorites();
+                    }
+                    
+                } catch (error) {
+                    console.error('Error loading data:', error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const loadFavorites = async () => {
+                try {
+                    const res = await api.call('/favorites.php?action=list', 'GET', null, token);
+                    if (res.success && res.favorites) {
+                        // Guardar solo los IDs
+                        const ids = res.favorites.map(f => parseInt(f.verse_id));
+                        setFavoritedVerses(ids);
+                        console.log('✅ Favoritos cargados:', ids);
+                    }
+                } catch (error) {
+                    console.error('Error loading favorites:', error);
+                }
+            };
+
+            const toggleFavorite = async (verseId) => {
+                try {
+                    const isFavorited = favoritedVerses.includes(verseId);
+                    
+                    if (isFavorited) {
+                        // Remover
+                        const res = await api.call(`/favorites.php?action=remove&verse_id=${verseId}`, 'DELETE', null, token);
+                        if (res.success) {
+                            setFavoritedVerses(prev => prev.filter(id => id !== verseId));
+                            console.log('✅ Favorito removido');
+                        }
+                    } else {
+                        // Agregar
+                        const res = await api.call('/favorites.php?action=add', 'POST', { verse_id: verseId }, token);
+                        if (res.success) {
+                            setFavoritedVerses(prev => [...prev, verseId]);
+                            console.log('✅ Favorito agregado');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error toggling favorite:', error);
+                }
+            };
+            
+            const loadVerse = async () => {
+                try {
+                    console.log('🔵 Cargando versículo...');
+                    const res = await api.call('/verses.php?action=personalized', 'GET', null, token);
+                    console.log('🔵 Respuesta:', res);
+                    
+                    if (res && res.success && res.verse) {
+                        console.log('✅ Versículo recibido:', res.verse);
+                        setCurrentVerse(res.verse);
+                    } else {
+                        console.warn('⚠️ No se recibió versículo válido');
+                        // Forzar un versículo de ejemplo para que no se quede en blanco
+                        setCurrentVerse({
+                            id: 1,
+                            reference: 'Juan 3:16',
+                            text_es: 'Porque de tal manera amó Dios al mundo...',
+                            text_en: 'For God so loved the world...'
+                        });
+                    }
+                } catch (error) {
+                    console.error('❌ Error cargando versículo:', error);
+                }
+            };
+                        
+            const handleCheckin = async (emotionId, notes) => {
+                try {
+                    const res = await api.call('/checkin.php?action=create', 'POST', { emotion_id: emotionId, notes }, token);
+                    
+                    if (res.success) {
+                        // 1. Cerrar modal INMEDIATAMENTE
+                        setShowCheckin(false);
+                        
+                        // 2. Recargar TODA la data después de cerrar
+                        setTimeout(() => {
+                            loadData();
+                        }, 200);
+                    }
+                } catch (error) {
+                    console.error('❌ Error:', error);
+                    setShowCheckin(false);
+                }
+            };
+                                    
+            // Mostrar loading mientras carga
+            if (loading) {
+                return (
+                    <div className={`min-h-screen ${dark ? 'dark bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900' : 'bg-gradient-to-br from-purple-100 via-pink-50 to-blue-100'} flex items-center justify-center`}>
+                        <div className="spinner"></div>
+                    </div>
+                );
+            }
+            
+            return (
+                <div className={`min-h-screen ${dark ? 'dark bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900' : 'bg-gradient-to-br from-purple-100 via-pink-50 to-blue-100'} transition-all duration-500`}>
+                    <NotificationService token={token} settings={settings} currentVerse={currentVerse} />
+                    {showCheckin && emotions.length > 0 && (
+                        <CheckinModal
+                            emotions={emotions}
+                            lang={lang}
+                            dark={dark}
+                            onSubmit={handleCheckin}
+                            onSkip={() => {
+                                setShowCheckin(false);
+                                loadVerse();
+                            }}
+                        />
+                    )}
+                    
+                    <Header user={user} dark={dark} onLogout={onLogout} settings={settings} token={token} onUpdate={onSettingsUpdate} t={t} />
+                    
+                    <div className="max-w-4xl mx-auto px-4 py-6 pb-24">
+                        {view === 'home' && <HomeView token={token} dark={dark} lang={lang} verse={currentVerse} checkin={todayCheckin} onRefresh={loadVerse} onShowCheckin={() => setShowCheckin(true)} t={t} favoritedVerses={favoritedVerses} onToggleFavorite={toggleFavorite} />}
+                        {view === 'history' && <HistoryView token={token} dark={dark} lang={lang} t={t} />}
+                        {view === 'stats' && <StatsView token={token} dark={dark} lang={lang} t={t} />}
+                        {view === 'favorites' && <FavoritesView token={token} dark={dark} lang={lang} t={t} />}
+                    </div>
+                    
+                    <BottomNav view={view} setView={setView} dark={dark} t={t} />
+                </div>
+            );
+        };
+        
+        // Componente Header
+        const Header = ({ user, dark, onLogout, settings, token, onUpdate, t }) => {
+            const [showSettings, setShowSettings] = useState(false);
+            
+            // Validación de seguridad
+            if (!user) {
+                return (
+                    <div className={`${dark ? 'bg-black/30' : 'bg-white/30'} backdrop-blur-md border-b ${dark ? 'border-purple-500/20' : 'border-purple-200'}`}>
+                        <div className="max-w-4xl mx-auto px-4 py-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
+                                <i data-lucide="book-open" className="w-6 h-6 text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+            return (
+                <>
+                    <div className={`${dark ? 'bg-black/30' : 'bg-white/30'} backdrop-blur-md border-b ${dark ? 'border-purple-500/20' : 'border-purple-200'}`}>
+                        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
+                                    <i data-lucide="book-open" className="w-6 h-6 text-white"></i>
+                                </div>
+                                <div>
+                                    <h1 className={`text-xl font-bold ${dark ? 'text-white' : 'text-gray-800'}`}>Maná Digital</h1>
+                                    <p className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-600'}`}>{user.name}</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowSettings(true)}
+                                className={`p-3 rounded-xl ${dark ? 'bg-white/10 text-white' : 'bg-purple-100 text-purple-700'} hover:scale-110 transition-all`}
+                            >
+                                <i data-lucide="settings" className="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {showSettings && (
+                        <SettingsModal
+                            settings={settings}
+                            token={token}
+                            onUpdate={onUpdate}
+                            onClose={() => setShowSettings(false)}
+                            onLogout={onLogout}
+                            dark={dark}
+                            t={t}
+                        />
+                    )}
+                </>
+            );
+        };
+        
+        // Modal de Check-in
+        const CheckinModal = ({ emotions, lang, dark, onSubmit, onSkip }) => {
+            const [selected, setSelected] = useState(null);
+            const [notes, setNotes] = useState('');
+            
+            return (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className={`w-full max-w-lg ${dark ? 'bg-gray-800' : 'bg-white'} rounded-3xl p-6 shadow-2xl animate-slide-in`}>
+                        <h2 className={`text-2xl font-bold mb-6 ${dark ? 'text-white' : 'text-gray-800'}`}>¿Cómo te sientes hoy?</h2>
+                        
+                        <div className="grid grid-cols-3 gap-3 mb-6">
+                            {emotions.map(e => (
+                                <button
+                                    key={e.id}
+                                    onClick={() => setSelected(e.id)}
+                                    className={`p-4 rounded-xl border-2 transition-all ${
+                                        selected === e.id
+                                            ? 'border-purple-500 bg-purple-500/20'
+                                            : dark
+                                            ? 'border-gray-700 bg-gray-700/50'
+                                            : 'border-gray-200 bg-gray-50'
+                                    }`}
+                                >
+                                    <div className="text-4xl mb-2">{e.emoji}</div>
+                                    <div className={`text-sm font-semibold ${dark ? 'text-white' : 'text-gray-800'}`}>
+                                        {lang === 'es' ? e.name_es : e.name_en}
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                        
+                        <textarea
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            placeholder="Notas opcionales"
+                            rows="3"
+                            className={`w-full p-3 rounded-xl border ${
+                                dark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
+                            } focus:outline-none focus:ring-2 focus:ring-purple-500 mb-4`}
+                        ></textarea>
+                        
+                        <div className="flex gap-3">
+                            <button
+                                onClick={onSkip}
+                                className={`flex-1 p-3 rounded-xl ${
+                                    dark ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-800'
+                                } font-semibold hover:opacity-80 transition-all`}
+                            >
+                                Saltar
+                            </button>
+                            <button
+                                onClick={() => selected && onSubmit(selected, notes)}
+                                disabled={!selected}
+                                className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white p-3 rounded-xl font-semibold hover:opacity-90 transition-all disabled:opacity-50"
+                            >
+                                Enviar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+        
+        // Vista Home
+        const HomeView = ({ token, dark, lang, verse, checkin, onRefresh, onShowCheckin, t, favoritedVerses, onToggleFavorite }) => {
+            //const [favorited, setFavorited] = useState(false);
+            
+            /*const toggleFavorite = async () => {
+                if (!verse) return;
+                const res = favorited
+                    ? await api.call(`/favorites.php?action=remove&verse_id=${verse.id}`, 'DELETE', null, token)
+                    : await api.call('/favorites.php?action=add', 'POST', { verse_id: verse.id }, token);
+                if (res.success) setFavorited(!favorited);
+            };*/
+             const isFavorited = verse && favoritedVerses.includes(parseInt(verse.id));
+            
+            return (
+                <div className="space-y-6">
+                    {checkin && (
+                        <div className={`${dark ? 'bg-white/10' : 'bg-white/70'} backdrop-blur-md border ${dark ? 'border-purple-500/20' : 'border-purple-200'} rounded-3xl p-6 shadow-xl`}>
+                            <div className="flex items-center gap-3">
+                                <div className="text-4xl">{checkin.emoji}</div>
+                                <div>
+                                    <p className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-600'}`}>Hoy te sientes:</p>
+                                    <p className={`text-lg font-semibold ${dark ? 'text-white' : 'text-gray-800'}`}>
+                                        {lang === 'es' ? checkin.name_es : checkin.name_en}
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={onShowCheckin}
+                                    className="ml-auto text-purple-500 hover:scale-110 transition-all"
+                                >
+                                    <i data-lucide="edit-2" className="w-5 h-5"></i>
+                                </button>
+                            </div>
+                            {checkin.notes && (
+                                <p className={`mt-3 text-sm ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{checkin.notes}</p>
+                            )}
+                        </div>
+                    )}
+                    
+                    <div
+                        onClick={() => !verse && onRefresh()}
+                        className={`${dark ? 'bg-white/10' : 'bg-white/70'} backdrop-blur-md border ${dark ? 'border-purple-500/20' : 'border-purple-200'} rounded-3xl p-8 shadow-2xl cursor-pointer hover:scale-105 transition-all`}
+                    >
+                        {verse ? (
+                            <div>
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className="flex-1">
+                                        <p className={`text-sm font-semibold ${dark ? 'text-purple-300' : 'text-purple-600'} mb-2`}>
+                                            {verse.reference}
+                                        </p>
+                                        <p className={`text-lg leading-relaxed ${dark ? 'text-white' : 'text-gray-800'}`}>
+                                            {lang === 'es' ? verse.text_es : verse.text_en}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (verse) onToggleFavorite(parseInt(verse.id));  // ← NUEVO
+                                        }}
+                                        className={`p-2 rounded-xl transition-all ${
+                                            isFavorited  // ← CAMBIADO
+                                                ? 'bg-pink-500 text-white'
+                                                : dark
+                                                ? 'bg-white/10 text-white'
+                                                : 'bg-gray-100 text-gray-600'
+                                        }`}
+                                    >
+                                        <i data-lucide="heart" className={`w-5 h-5 ${isFavorited ? 'fill-current' : ''}`}></i>  {/* ← CAMBIADO */}
+                                    </button>
+                                </div>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onRefresh();
+                                    }}
+                                    className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-2 rounded-xl font-semibold hover:opacity-90 transition-all"
+                                >
+                                    {t.newVerse}
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="text-center py-8">
+                                <i data-lucide="book-open" className={`w-16 h-16 mx-auto mb-4 ${dark ? 'text-purple-400' : 'text-purple-500'} opacity-50`}></i>
+                                <p className={`${dark ? 'text-gray-300' : 'text-gray-600'}`}>{t.noVerse}</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+        
+        // Vista de Historial
+        const HistoryView = ({ token, dark, lang, t }) => {
+            const [history, setHistory] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [loaded, setLoaded] = useState(false); // ← AGREGAR
+            
+            useEffect(() => {
+                // Solo cargar si no se ha cargado antes
+                if (!loaded) {  // ← AGREGAR esta condición
+                    api.call('/verses.php?action=history', 'GET', null, token).then(res => {
+                        if (res.success) setHistory(res.history);
+                        setLoading(false);
+                        setLoaded(true); // ← AGREGAR
+                    });
+                }
+            }, [loaded]); 
+            
+            if (loading) {
+                return (
+                    <div className="flex justify-center py-12">
+                        <div className="spinner"></div>
+                    </div>
+                );
+            }
+            
+            return (
+                <div className="space-y-4">
+                    {history.length === 0 ? (
+                        <div className={`${dark ? 'bg-white/10' : 'bg-white/70'} backdrop-blur-md border ${dark ? 'border-purple-500/20' : 'border-purple-200'} rounded-3xl p-12 text-center`}>
+                            <i data-lucide="history" className={`w-16 h-16 mx-auto mb-4 ${dark ? 'text-purple-400' : 'text-purple-500'} opacity-50`}></i>
+                            <p className={`${dark ? 'text-gray-300' : 'text-gray-600'}`}>{t.noHistory}</p>
+                        </div>
+                    ) : (
+                        history.map(item => (
+                            <div
+                                key={item.history_id}
+                                className={`${dark ? 'bg-white/10' : 'bg-white/70'} backdrop-blur-md border ${dark ? 'border-purple-500/20' : 'border-purple-200'} rounded-2xl p-6 shadow-lg`}
+                            >
+                                <p className={`text-sm font-semibold ${dark ? 'text-purple-300' : 'text-purple-600'} mb-2`}>
+                                    {item.reference}
+                                </p>
+                                <p className={`text-base ${dark ? 'text-white' : 'text-gray-800'} mb-2`}>
+                                    {lang === 'es' ? item.text_es : item.text_en}
+                                </p>
+                                <div className="flex items-center gap-2 text-xs">
+                                    {item.emotion_emoji && <span>{item.emotion_emoji}</span>}
+                                    <span className={`${dark ? 'text-gray-400' : 'text-gray-500'}`}>
+                                        {new Date(item.sent_at).toLocaleString(lang)}
+                                    </span>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+            );
+        };
+        
+        // Vista de Estadísticas
+        const StatsView = ({ token, dark, lang, t }) => {
+            const [stats, setStats] = useState(null);
+            const chartRef = useRef(null);
+            const chartInstance = useRef(null);
+            const [loaded, setLoaded] = useState(false);
+            
+            useEffect(() => {
+                if (!loaded) {
+                    api.call('/checkin.php?action=stats&days=30', 'GET', null, token).then(res => {
+                        if (res.success) {
+                            setStats(res.stats);
+                            setLoaded(true); // ← AGREGAR ESTA LÍNEA
+                        }
+                    });
+                }
+            }, [loaded]);
+            
+            useEffect(() => {
+                if (stats && chartRef.current && !chartInstance.current) {
+                    const ctx = chartRef.current.getContext('2d');
+                    chartInstance.current = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: stats.emotions.map(e => lang === 'es' ? e.name_es : e.name_en),
+                            datasets: [{
+                                label: t.checkinsLast30Days,
+                                data: stats.emotions.map(e => e.count),
+                                backgroundColor: stats.emotions.map(e => e.color || '#8B5CF6')
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: { legend: { display: false } }
+                        }
+                    });
+                }
+            }, [stats]);
+            
+            if (!stats) {
+                return (
+                    <div className="flex justify-center py-12">
+                        <div className="spinner"></div>
+                    </div>
+                );
+            }
+            
+            return (
+                <div className="space-y-6">
+                    <div className={`${dark ? 'bg-white/10' : 'bg-white/70'} backdrop-blur-md border ${dark ? 'border-purple-500/20' : 'border-purple-200'} rounded-3xl p-6 shadow-xl`}>
+                        <h3 className={`text-lg font-bold mb-4 ${dark ? 'text-white' : 'text-gray-800'}`}>
+                            {t.emotionalJourney}
+                        </h3>
+                        <div className="grid grid-cols-2 gap-4 mb-6">
+                            <div className={`${dark ? 'bg-white/5' : 'bg-purple-50'} rounded-xl p-4`}>
+                                <p className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-600'}`}>Total Check-ins</p>
+                                <p className={`text-3xl font-bold ${dark ? 'text-white' : 'text-gray-800'}`}>
+                                    {stats.total_checkins}
+                                </p>
+                            </div>
+                            <div className={`${dark ? 'bg-white/5' : 'bg-purple-50'} rounded-xl p-4`}>
+                                <p className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-600'}`}>{t.currentStreak}</p>
+                                <p className={`text-3xl font-bold ${dark ? 'text-white' : 'text-gray-800'}`}>
+                                    {stats.current_streak} {t.days}
+                                </p>
+                            </div>
+                        </div>
+                        <canvas ref={chartRef} className="w-full h-64"></canvas>
+                    </div>
+                </div>
+            );
+        };
+        
+        // Vista de Favoritos
+        const FavoritesView = ({ token, dark, lang, t }) => {
+            const [favorites, setFavorites] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [loaded, setLoaded] = useState(false); 
+            
+            useEffect(() => {
+                // Solo cargar si no se ha cargado antes
+                if (!loaded) {
+                    loadFavorites();
+                }
+            }, [loaded]); // ← CAMBIAR de [] a [loaded]
+            
+            const loadFavorites = () => {
+                api.call('/favorites.php?action=list', 'GET', null, token).then(res => {
+                    if (res.success) setFavorites(res.favorites);
+                    setLoading(false);
+                    setLoaded(true); // ← AGREGAR ESTA LÍNEA
+                });
+            };
+            
+            const removeFavorite = async (verseId) => {
+                const res = await api.call(`/favorites.php?action=remove&verse_id=${verseId}`, 'DELETE', null, token);
+                if (res.success) {
+                    setLoaded(false); // ← AGREGAR ESTA LÍNEA
+                    loadFavorites();
+                }
+            };
+            
+            if (loading) {
+                return (
+                    <div className="flex justify-center py-12">
+                        <div className="spinner"></div>
+                    </div>
+                );
+            }
+            
+            return (
+                <div className="space-y-4">
+                    {favorites.length === 0 ? (
+                        <div className={`${dark ? 'bg-white/10' : 'bg-white/70'} backdrop-blur-md border ${dark ? 'border-purple-500/20' : 'border-purple-200'} rounded-3xl p-12 text-center`}>
+                            <i data-lucide="heart" className={`w-16 h-16 mx-auto mb-4 ${dark ? 'text-purple-400' : 'text-purple-500'} opacity-50`}></i>
+                            <p className={`${dark ? 'text-gray-300' : 'text-gray-600'}`}>{t.noFavorites}</p>
+                        </div>
+                    ) : (
+                        favorites.map(item => (
+                            <div
+                                key={item.favorite_id}
+                                className={`${dark ? 'bg-white/10' : 'bg-white/70'} backdrop-blur-md border ${dark ? 'border-purple-500/20' : 'border-purple-200'} rounded-2xl p-6 shadow-lg`}
+                            >
+                                <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                        <p className={`text-sm font-semibold ${dark ? 'text-purple-300' : 'text-purple-600'} mb-2`}>
+                                            {item.reference}
+                                        </p>
+                                        <p className={`text-base ${dark ? 'text-white' : 'text-gray-800'}`}>
+                                            {lang === 'es' ? item.text_es : item.text_en}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => removeFavorite(item.verse_id)}
+                                        className="p-2 rounded-xl bg-pink-500 text-white hover:opacity-80 transition-all"
+                                    >
+                                        <i data-lucide="heart" className="w-4 h-4 fill-current"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+            );
+        };
+        
+        // Modal de Configuración
+        const SettingsModal = ({ settings, token, onUpdate, onClose, onLogout, dark, t }) => {
+            const [localSettings, setLocalSettings] = useState(settings);
+            const [saving, setSaving] = useState(false);
+            const [schedules, setSchedules] = useState([]);
+            const [newSchedule, setNewSchedule] = useState('');
+            const [loadingSchedules, setLoadingSchedules] = useState(true);
+            
+            // Cargar horarios al abrir el modal
+            useEffect(() => {
+                loadSchedules();
+            }, []);
+            
+            const loadSchedules = async () => {
+                try {
+                    const res = await api.call('/settings.php?action=get', 'GET', null, token);
+                    if (res.success && res.schedules) {
+                        setSchedules(res.schedules);
+                    }
+                    setLoadingSchedules(false);
+                } catch (error) {
+                    console.error('Error loading schedules:', error);
+                    setLoadingSchedules(false);
+                }
+            };
+            
+            const addSchedule = async () => {
+                if (!newSchedule) return;
+                
+                try {
+                    const res = await api.call('/settings.php?action=add-schedule', 'POST', { time: newSchedule + ':00' }, token);
+                    if (res.success) {
+                        await loadSchedules();
+                        setNewSchedule('');
+                    }
+                } catch (error) {
+                    console.error('Error adding schedule:', error);
+                }
+            };
+            
+            const removeSchedule = async (scheduleId) => {
+                try {
+                    const res = await api.call(`/settings.php?action=remove-schedule&id=${scheduleId}`, 'DELETE', null, token);
+                    if (res.success) {
+                        await loadSchedules();
+                    }
+                } catch (error) {
+                    console.error('Error removing schedule:', error);
+                }
+            };
+            
+            const handleSave = async () => {
+                setSaving(true);
+                const res = await api.call('/settings.php?action=update', 'PUT', localSettings, token);
+                if (res.success) {
+                    onUpdate(localSettings);
+                    onClose();
+                }
+                setSaving(false);
+            };
+            
+            return (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+                    <div className={`w-full max-w-2xl ${dark ? 'bg-gray-800' : 'bg-white'} rounded-3xl p-6 shadow-2xl animate-slide-in my-8`}>
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-gray-800'}`}>{t.settings}</h2>
+                            <button
+                                onClick={onClose}
+                                className={`p-2 rounded-xl ${dark ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-800'} hover:opacity-80 transition-all`}
+                            >
+                                <i data-lucide="x" className="w-5 h-5"></i>
+                            </button>
+                        </div>
+                        
+                        <div className="space-y-6 mb-6 max-h-[60vh] overflow-y-auto">
+                            {/* Apariencia */}
+                            <div>
+                                <h3 className={`text-lg font-semibold mb-3 ${dark ? 'text-white' : 'text-gray-800'}`}>Apariencia</h3>
+                                
+                                <div className={`flex items-center justify-between p-4 rounded-xl ${dark ? 'bg-gray-700' : 'bg-gray-50'} mb-3`}>
+                                    <span className={`font-semibold ${dark ? 'text-white' : 'text-gray-800'}`}>{t.darkMode}</span>
+                                    <button
+                                        onClick={() => setLocalSettings({ ...localSettings, dark_mode: !localSettings.dark_mode })}
+                                        className={`w-14 h-8 rounded-full transition-all ${localSettings.dark_mode ? 'bg-purple-500' : 'bg-gray-300'}`}
+                                    >
+                                        <div className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-all ${localSettings.dark_mode ? 'translate-x-7' : 'translate-x-1'}`}></div>
+                                    </button>
+                                </div>
+                                
+                                <div className={`p-4 rounded-xl ${dark ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                                    <label className={`block font-semibold mb-2 ${dark ? 'text-white' : 'text-gray-800'}`}>{t.language}</label>
+                                    <select
+                                        value={localSettings.language}
+                                        onChange={(e) => setLocalSettings({ ...localSettings, language: e.target.value })}
+                                        className={`w-full p-3 rounded-xl ${dark ? 'bg-gray-600 text-white border-gray-500' : 'bg-white text-gray-800 border-gray-300'} border focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                                    >
+                                        <option value="es">Español</option>
+                                        <option value="en">English</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            {/* Notificaciones */}
+                            <div>
+                                <h3 className={`text-lg font-semibold mb-3 ${dark ? 'text-white' : 'text-gray-800'}`}>
+                                    <i data-lucide="bell" className="w-5 h-5 inline mr-2"></i>
+                                    Notificaciones
+                                </h3>
+                                
+                                {/* Habilitar notificaciones */}
+                                <div className={`flex items-center justify-between p-4 rounded-xl ${dark ? 'bg-gray-700' : 'bg-gray-50'} mb-3`}>
+                                    <div>
+                                        <span className={`font-semibold block ${dark ? 'text-white' : 'text-gray-800'}`}>Habilitar Notificaciones</span>
+                                        <span className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-600'}`}>Recibe versículos y recordatorios</span>
+                                    </div>
+                                    <button
+                                        onClick={() => setLocalSettings({ ...localSettings, notifications_enabled: !localSettings.notifications_enabled })}
+                                        className={`w-14 h-8 rounded-full transition-all ${localSettings.notifications_enabled ? 'bg-purple-500' : 'bg-gray-300'}`}
+                                    >
+                                        <div className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-all ${localSettings.notifications_enabled ? 'translate-x-7' : 'translate-x-1'}`}></div>
+                                    </button>
+                                </div>
+                                
+                                {localSettings.notifications_enabled && (
+                                    <>
+                                        {/* Pausar notificaciones */}
+                                        <div className={`flex items-center justify-between p-4 rounded-xl ${dark ? 'bg-gray-700' : 'bg-gray-50'} mb-3`}>
+                                            <div>
+                                                <span className={`font-semibold block ${dark ? 'text-white' : 'text-gray-800'}`}>Pausar Notificaciones</span>
+                                                <span className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-600'}`}>Temporalmente</span>
+                                            </div>
+                                            <button
+                                                onClick={() => setLocalSettings({ ...localSettings, notifications_paused: !localSettings.notifications_paused })}
+                                                className={`w-14 h-8 rounded-full transition-all ${localSettings.notifications_paused ? 'bg-orange-500' : 'bg-gray-300'}`}
+                                            >
+                                                <div className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-all ${localSettings.notifications_paused ? 'translate-x-7' : 'translate-x-1'}`}></div>
+                                            </button>
+                                        </div>
+                                        
+                                        {/* Modo de notificaciones */}
+                                        <div className={`p-4 rounded-xl ${dark ? 'bg-gray-700' : 'bg-gray-50'} mb-3`}>
+                                            <label className={`block font-semibold mb-3 ${dark ? 'text-white' : 'text-gray-800'}`}>Modo de Notificaciones</label>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => setLocalSettings({ ...localSettings, interval_mode: true })}
+                                                    className={`flex-1 p-3 rounded-xl font-semibold transition-all ${
+                                                        localSettings.interval_mode
+                                                            ? 'bg-purple-500 text-white'
+                                                            : dark ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-700'
+                                                    }`}
+                                                >
+                                                    <i data-lucide="clock" className="w-4 h-4 inline mr-1"></i>
+                                                    Intervalo
+                                                </button>
+                                                <button
+                                                    onClick={() => setLocalSettings({ ...localSettings, interval_mode: false })}
+                                                    className={`flex-1 p-3 rounded-xl font-semibold transition-all ${
+                                                        !localSettings.interval_mode
+                                                            ? 'bg-purple-500 text-white'
+                                                            : dark ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-700'
+                                                    }`}
+                                                >
+                                                    <i data-lucide="calendar" className="w-4 h-4 inline mr-1"></i>
+                                                    Horarios
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Intervalo */}
+                                        {localSettings.interval_mode && (
+                                            <div className={`p-4 rounded-xl ${dark ? 'bg-gray-700' : 'bg-gray-50'} mb-3`}>
+                                                <label className={`block font-semibold mb-2 ${dark ? 'text-white' : 'text-gray-800'}`}>
+                                                    Cada cuántas horas
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    max="24"
+                                                    value={localSettings.interval_hours || 2}
+                                                    onChange={(e) => setLocalSettings({ ...localSettings, interval_hours: parseInt(e.target.value) })}
+                                                    className={`w-full p-3 rounded-xl ${dark ? 'bg-gray-600 text-white border-gray-500' : 'bg-white text-gray-800 border-gray-300'} border focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                                                />
+                                            </div>
+                                        )}
+                                        
+                                        {/* Horarios personalizados */}
+                                        {!localSettings.interval_mode && (
+                                            <div className={`p-4 rounded-xl ${dark ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                                                <label className={`block font-semibold mb-2 ${dark ? 'text-white' : 'text-gray-800'}`}>
+                                                    Horarios Personalizados
+                                                </label>
+                                                
+                                                <div className="flex gap-2 mb-3">
+                                                    <input
+                                                        type="time"
+                                                        value={newSchedule}
+                                                        onChange={(e) => setNewSchedule(e.target.value)}
+                                                        className={`flex-1 p-3 rounded-xl ${dark ? 'bg-gray-600 text-white border-gray-500' : 'bg-white text-gray-800 border-gray-300'} border focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                                                    />
+                                                    <button
+                                                        onClick={addSchedule}
+                                                        disabled={!newSchedule}
+                                                        className="bg-purple-500 text-white px-4 rounded-xl hover:opacity-90 transition-all disabled:opacity-50"
+                                                    >
+                                                        <i data-lucide="plus" className="w-5 h-5"></i>
+                                                    </button>
+                                                </div>
+                                                
+                                                <div className="space-y-2 max-h-32 overflow-y-auto">
+                                                    {loadingSchedules ? (
+                                                        <p className={`text-sm text-center ${dark ? 'text-gray-400' : 'text-gray-600'}`}>Cargando...</p>
+                                                    ) : schedules.length === 0 ? (
+                                                        <p className={`text-sm text-center ${dark ? 'text-gray-400' : 'text-gray-600'}`}>No hay horarios configurados</p>
+                                                    ) : (
+                                                        schedules.map((schedule) => (
+                                                            <div key={schedule.id} className={`flex items-center justify-between p-3 rounded-xl ${dark ? 'bg-gray-600' : 'bg-white'}`}>
+                                                                <span className={`${dark ? 'text-white' : 'text-gray-800'}`}>
+                                                                    {schedule.time.substring(0, 5)}
+                                                                </span>
+                                                                <button
+                                                                    onClick={() => removeSchedule(schedule.id)}
+                                                                    className="text-red-500 hover:scale-110 transition-all"
+                                                                >
+                                                                    <i data-lucide="trash-2" className="w-4 h-4"></i>
+                                                                </button>
+                                                            </div>
+                                                        ))
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                        
+                                        {/* Check-in diario */}
+                                        <div className={`flex items-center justify-between p-4 rounded-xl ${dark ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                                            <div>
+                                                <span className={`font-semibold block ${dark ? 'text-white' : 'text-gray-800'}`}>Recordatorio de Check-in</span>
+                                                <span className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-600'}`}>Notificación diaria</span>
+                                            </div>
+                                            <button
+                                                onClick={() => setLocalSettings({ ...localSettings, checkin_notification: !localSettings.checkin_notification })}
+                                                className={`w-14 h-8 rounded-full transition-all ${localSettings.checkin_notification ? 'bg-purple-500' : 'bg-gray-300'}`}
+                                            >
+                                                <div className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-all ${localSettings.checkin_notification ? 'translate-x-7' : 'translate-x-1'}`}></div>
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                        
+                        <div className="flex gap-3">
+                            <button
+                                onClick={onLogout}
+                                className={`flex-1 p-3 rounded-xl ${dark ? 'bg-red-600 hover:bg-red-700' : 'bg-red-500 hover:bg-red-600'} text-white font-semibold transition-all`}
+                            >
+                                {t.logout}
+                            </button>
+                            <button
+                                onClick={handleSave}
+                                disabled={saving}
+                                className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white p-3 rounded-xl font-semibold hover:opacity-90 transition-all disabled:opacity-50"
+                            >
+                                {saving ? t.loading : t.save}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Servicio de Notificaciones
+            const NotificationService = ({ token, settings, currentVerse }) => {
+                const [permission, setPermission] = useState(Notification.permission);
+                const [lastNotification, setLastNotification] = useState(null);
+                
+                // Solicitar permisos
+                useEffect(() => {
+                    if (settings.notifications_enabled && permission === 'default') {
+                        Notification.requestPermission().then(perm => {
+                            setPermission(perm);
+                            console.log('🔔 Permiso de notificaciones:', perm);
+                        });
+                    }
+                }, [settings.notifications_enabled]);
+                
+                // Sistema de notificaciones por intervalo
+                useEffect(() => {
+                    if (!settings.notifications_enabled || settings.notifications_paused || permission !== 'granted') {
+                        return;
+                    }
+                    
+                    if (settings.interval_mode) {
+                        const hours = settings.interval_hours || 2;
+                        const intervalMs = hours * 60 * 60 * 1000;
+                        
+                        console.log(`⏰ Notificaciones cada ${hours} hora(s)`);
+                        
+                        const sendNotification = async () => {
+                            try {
+                                // Obtener versículo personalizado
+                                const res = await api.call('/verses.php?action=personalized', 'GET', null, token);
+                                
+                                if (res.success && res.verse) {
+                                    const verse = res.verse;
+                                    const text = settings.language === 'es' ? verse.text_es : verse.text_en;
+                                    
+                                    new Notification('🙏 Recordatorio de Oración', {
+                                        body: `${verse.reference}\n\n${text.substring(0, 100)}...`,
+                                        icon: '/icon-192.png',
+                                        badge: '/icon-192.png',
+                                        tag: 'prayer-reminder',
+                                        requireInteraction: false
+                                    });
+                                    
+                                    setLastNotification(new Date().toISOString());
+                                    console.log('✅ Notificación enviada (intervalo)');
+                                }
+                            } catch (error) {
+                                console.error('Error sending notification:', error);
+                            }
+                        };
+                        
+                        // Primera notificación después de 1 minuto (para testing)
+                        const firstTimeout = setTimeout(sendNotification, 60000);
+                        
+                        // Luego cada X horas
+                        const interval = setInterval(sendNotification, intervalMs);
+                        
+                        return () => {
+                            clearTimeout(firstTimeout);
+                            clearInterval(interval);
+                        };
+                    }
+                }, [settings, permission, token]);
+                
+                // Sistema de notificaciones por horarios
+                useEffect(() => {
+                    if (!settings.notifications_enabled || settings.notifications_paused || permission !== 'granted') {
+                        return;
+                    }
+                    
+                    if (!settings.interval_mode) {
+                        const checkSchedules = async () => {
+                            const now = new Date();
+                            const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                            
+                            // Obtener horarios del servidor
+                            const res = await api.call('/settings.php?action=get', 'GET', null, token);
+                            
+                            if (res.success && res.schedules) {
+                                for (const schedule of res.schedules) {
+                                    const scheduleTime = schedule.time.substring(0, 5);
+                                    
+                                    if (scheduleTime === currentTime) {
+                                        // Es hora de enviar notificación
+                                        try {
+                                            const verseRes = await api.call('/verses.php?action=personalized', 'GET', null, token);
+                                            
+                                            if (verseRes.success && verseRes.verse) {
+                                                const verse = verseRes.verse;
+                                                const text = settings.language === 'es' ? verse.text_es : verse.text_en;
+                                                
+                                                new Notification('🙏 Recordatorio de Oración', {
+                                                    body: `${verse.reference}\n\n${text.substring(0, 100)}...`,
+                                                    icon: '/icon-192.png',
+                                                    badge: '/icon-192.png',
+                                                    tag: 'prayer-reminder',
+                                                    requireInteraction: false
+                                                });
+                                                
+                                                setLastNotification(new Date().toISOString());
+                                                console.log('✅ Notificación enviada (horario:', scheduleTime, ')');
+                                            }
+                                        } catch (error) {
+                                            console.error('Error sending scheduled notification:', error);
+                                        }
+                                    }
+                                }
+                            }
+                        };
+                        
+                        // Verificar cada minuto
+                        const interval = setInterval(checkSchedules, 60000);
+                        
+                        // Verificar inmediatamente
+                        checkSchedules();
+                        
+                        return () => clearInterval(interval);
+                    }
+                }, [settings, permission, token]);
+                
+                // Notificación de check-in diario
+                useEffect(() => {
+                    if (!settings.notifications_enabled || !settings.checkin_notification || permission !== 'granted') {
+                        return;
+                    }
+                    
+                    const checkDailyReminder = async () => {
+                        const now = new Date();
+                        const hour = now.getHours();
+                        const minute = now.getMinutes();
+                        
+                        // Hora del check-in (por defecto 9:00 AM)
+                        const checkinTime = settings.checkin_time || '09:00:00';
+                        const [checkinHour, checkinMinute] = checkinTime.split(':').map(Number);
+                        
+                        if (hour === checkinHour && minute === checkinMinute) {
+                            // Verificar si ya hizo check-in hoy
+                            const res = await api.call('/checkin.php?action=today', 'GET', null, token);
+                            
+                            if (res.success && !res.has_checkin) {
+                                new Notification('🌅 Buenos días', {
+                                    body: '¿Cómo te sientes hoy? Haz tu check-in emocional',
+                                    icon: '/icon-192.png',
+                                    badge: '/icon-192.png',
+                                    tag: 'daily-checkin',
+                                    requireInteraction: true
+                                });
+                                
+                                console.log('✅ Notificación de check-in enviada');
+                            }
+                        }
+                    };
+                    
+                    // Verificar cada minuto
+                    const interval = setInterval(checkDailyReminder, 60000);
+                    
+                    return () => clearInterval(interval);
+                }, [settings, permission, token]);
+                
+                return null; // Este componente no renderiza nada
+            };
+        
+        // Navegación Inferior
+        const BottomNav = ({ view, setView, dark, t }) => {
+            const items = [
+                { id: 'home', icon: 'home', label: t.home },
+                { id: 'history', icon: 'history', label: t.history },
+                { id: 'stats', icon: 'bar-chart-2', label: t.stats },
+                { id: 'favorites', icon: 'heart', label: t.favorites }
+            ];
+            
+            return (
+                <div className={`fixed bottom-0 left-0 right-0 ${dark ? 'bg-black/30' : 'bg-white/30'} backdrop-blur-md border-t ${dark ? 'border-purple-500/20' : 'border-purple-200'}`}>
+                    <div className="max-w-4xl mx-auto px-4 py-3">
+                        <div className="flex justify-around">
+                            {items.map(item => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => setView(item.id)}
+                                    className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-all ${
+                                        view === item.id
+                                            ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
+                                            : dark
+                                            ? 'text-gray-400 hover:text-white'
+                                            : 'text-gray-600 hover:text-gray-800'
+                                    }`}
+                                >
+                                    <i data-lucide={item.icon} className="w-6 h-6"></i>
+                                    <span className="text-xs font-semibold">{item.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+        
+        // Renderizar la aplicación
+        ReactDOM.render(React.createElement(App), document.getElementById('root'));
+        
+        // Inicializar iconos de Lucide
+        setTimeout(() => lucide.createIcons(), 100);
+    </script>
+</body>
+</html>
