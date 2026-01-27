@@ -1,7 +1,7 @@
 // Service Worker para Maná Digital
 // Maneja notificaciones en segundo plano y clic en notificaciones
 
-const CACHE_NAME = 'mana-digital-v1';
+const CACHE_NAME = 'mana-digital-v2';
 const NOTIFICATION_VERSE_KEY = 'pending_notification_verse';
 
 // Instalación del Service Worker
@@ -13,7 +13,19 @@ self.addEventListener('install', (event) => {
 // Activación del Service Worker
 self.addEventListener('activate', (event) => {
     console.log('✅ Service Worker activado');
-    event.waitUntil(clients.claim());
+    // Limpiar caches antiguas
+    event.waitUntil(
+        caches.keys().then((cacheNames) => {
+            return Promise.all(
+                cacheNames.map((cacheName) => {
+                    if (cacheName !== CACHE_NAME) {
+                        console.log('🗑️ Eliminando cache antigua:', cacheName);
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        }).then(() => clients.claim())
+    );
 });
 
 // Manejar mensajes desde la app principal
