@@ -352,6 +352,7 @@
             const [currentVerse, setCurrentVerse] = useState(null);
             const [currentStory, setCurrentStory] = useState(null);
             const [contentType, setContentType] = useState('verse'); // 'verse' o 'story'
+            const [contentLoading, setContentLoading] = useState(false);
             const [emotions, setEmotions] = useState([]);
             const [loading, setLoading] = useState(true);
             const [favoritedVerses, setFavoritedVerses] = useState([]);
@@ -495,7 +496,26 @@
                 }
             };
             
+            const fallbackVerse = {
+                id: 1,
+                reference: 'Juan 3:16',
+                text_es: 'Porque de tal manera amó Dios al mundo, que ha dado a su Hijo unigénito, para que todo aquel que en él cree, no se pierda, mas tenga vida eterna.',
+                text_en: 'For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.'
+            };
+
+            const fallbackStory = {
+                id: 1,
+                title_es: 'David y Goliat',
+                title_en: 'David and Goliath',
+                reference: '1 Samuel 17',
+                summary_es: 'Un joven pastor llamado David enfrentó al gigante filisteo Goliat cuando todo el ejército de Israel tenía miedo. Con solo una honda y cinco piedras, y con fe inquebrantable en Dios, David derrotó al gigante.',
+                summary_en: 'A young shepherd named David faced the Philistine giant Goliath when all of Israel\'s army was afraid. With just a sling and five stones, and unwavering faith in God, David defeated the giant.',
+                moral_es: 'Con fe en Dios, podemos superar cualquier obstáculo que parezca imposible.',
+                moral_en: 'With faith in God, we can overcome any obstacle that seems impossible.'
+            };
+
             const loadVerse = async (forceNew = false) => {
+                setContentLoading(true);
                 try {
                     // Si no se fuerza nuevo, verificar si hay versículo pendiente de notificación
                     if (!forceNew) {
@@ -506,6 +526,7 @@
                                 console.log('📖 Cargando versículo de notificación:', verse);
                                 setCurrentVerse(verse);
                                 localStorage.removeItem(NOTIFICATION_VERSE_KEY);
+                                setContentLoading(false);
                                 return; // No llamar a la API
                             } catch (e) {
                                 console.error('Error parsing pending verse:', e);
@@ -522,21 +543,19 @@
                         console.log('✅ Versículo recibido:', res.verse);
                         setCurrentVerse(res.verse);
                     } else {
-                        console.warn('⚠️ No se recibió versículo válido');
-                        // Forzar un versículo de ejemplo para que no se quede en blanco
-                        setCurrentVerse({
-                            id: 1,
-                            reference: 'Juan 3:16',
-                            text_es: 'Porque de tal manera amó Dios al mundo...',
-                            text_en: 'For God so loved the world...'
-                        });
+                        console.warn('⚠️ No se recibió versículo válido, usando fallback');
+                        setCurrentVerse(fallbackVerse);
                     }
                 } catch (error) {
                     console.error('❌ Error cargando versículo:', error);
+                    setCurrentVerse(fallbackVerse);
+                } finally {
+                    setContentLoading(false);
                 }
             };
 
             const loadStory = async () => {
+                setContentLoading(true);
                 try {
                     console.log('📖 Cargando relato bíblico...');
                     const res = await api.call('/stories.php?action=personalized', 'GET', null, token);
@@ -545,11 +564,14 @@
                         console.log('✅ Relato recibido:', res.story);
                         setCurrentStory(res.story);
                     } else {
-                        console.warn('⚠️ No se recibió relato válido');
-                        setCurrentStory(null);
+                        console.warn('⚠️ No se recibió relato válido, usando fallback');
+                        setCurrentStory(fallbackStory);
                     }
                 } catch (error) {
                     console.error('❌ Error cargando relato:', error);
+                    setCurrentStory(fallbackStory);
+                } finally {
+                    setContentLoading(false);
                 }
             };
 
@@ -619,7 +641,7 @@
                     <Header user={user} dark={dark} onLogout={onLogout} settings={settings} token={token} onUpdate={onSettingsUpdate} t={t} />
                     
                     <div className="max-w-4xl mx-auto px-4 py-6 pb-24">
-                        {view === 'home' && <HomeView token={token} dark={dark} lang={lang} verse={currentVerse} story={currentStory} contentType={contentType} checkin={todayCheckin} onRefresh={contentType === 'verse' ? loadVerse : loadStory} onToggleContent={toggleContentType} onShowCheckin={() => setShowCheckin(true)} t={t} favoritedVerses={favoritedVerses} onToggleFavorite={toggleFavorite} />}
+                        {view === 'home' && <HomeView token={token} dark={dark} lang={lang} verse={currentVerse} story={currentStory} contentType={contentType} contentLoading={contentLoading} checkin={todayCheckin} onRefresh={contentType === 'verse' ? loadVerse : loadStory} onToggleContent={toggleContentType} onShowCheckin={() => setShowCheckin(true)} t={t} favoritedVerses={favoritedVerses} onToggleFavorite={toggleFavorite} />}
                         {view === 'history' && <HistoryView token={token} dark={dark} lang={lang} t={t} />}
                         {view === 'stats' && <StatsView token={token} dark={dark} lang={lang} t={t} />}
                         {view === 'favorites' && <FavoritesView token={token} dark={dark} lang={lang} t={t} />}
@@ -789,7 +811,7 @@
         };
         
         // Vista Home
-        const HomeView = ({ token, dark, lang, verse, story, contentType, checkin, onRefresh, onToggleContent, onShowCheckin, t, favoritedVerses, onToggleFavorite }) => {
+        const HomeView = ({ token, dark, lang, verse, story, contentType, contentLoading, checkin, onRefresh, onToggleContent, onShowCheckin, t, favoritedVerses, onToggleFavorite }) => {
             const isFavorited = verse && favoritedVerses.includes(parseInt(verse.id));
             const isStoryMode = contentType === 'story';
             const currentContent = isStoryMode ? story : verse;
@@ -849,10 +871,14 @@
 
                     {/* Contenido: Versículo o Relato */}
                     <div
-                        onClick={() => !currentContent && onRefresh()}
+                        onClick={() => !currentContent && !contentLoading && onRefresh()}
                         className={`${dark ? 'bg-white/10' : 'bg-white/70'} backdrop-blur-md border ${dark ? 'border-purple-500/20' : 'border-purple-200'} rounded-3xl p-8 shadow-2xl transition-all`}
                     >
-                        {isStoryMode ? (
+                        {contentLoading ? (
+                            <div className="flex justify-center py-12">
+                                <div className="spinner"></div>
+                            </div>
+                        ) : isStoryMode ? (
                             // Vista de Relato Bíblico
                             story ? (
                                 <div>
