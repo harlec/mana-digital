@@ -1,7 +1,7 @@
 // Service Worker para Maná Digital
 // Maneja notificaciones en segundo plano y clic en notificaciones
 
-const CACHE_NAME = 'mana-digital-v3';
+const CACHE_NAME = 'mana-digital-v4';
 const NOTIFICATION_VERSE_KEY = 'pending_notification_verse';
 
 // Instalación del Service Worker

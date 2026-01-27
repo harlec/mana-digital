@@ -556,9 +556,10 @@
             const toggleContentType = () => {
                 const newType = contentType === 'verse' ? 'story' : 'verse';
                 setContentType(newType);
-                if (newType === 'story' && !currentStory) {
+                // Siempre cargar contenido fresco al cambiar de modo
+                if (newType === 'story') {
                     loadStory();
-                } else if (newType === 'verse' && !currentVerse) {
+                } else {
                     loadVerse(true);
                 }
             };
