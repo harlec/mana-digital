@@ -350,10 +350,12 @@
             const [showCheckin, setShowCheckin] = useState(false);
             const [todayCheckin, setTodayCheckin] = useState(null);
             const [currentVerse, setCurrentVerse] = useState(null);
+            const [currentStory, setCurrentStory] = useState(null);
+            const [contentType, setContentType] = useState('verse'); // 'verse' o 'story'
             const [emotions, setEmotions] = useState([]);
             const [loading, setLoading] = useState(true);
-            const [favoritedVerses, setFavoritedVerses] = useState([]); // ← NUEVO
-            const [emotionsCached, setEmotionsCached] = useState(false); // ← NUEVO
+            const [favoritedVerses, setFavoritedVerses] = useState([]);
+            const [emotionsCached, setEmotionsCached] = useState(false);
             const dark = settings.dark_mode;
             const lang = settings.language || 'es';
             const t = translations[lang];
@@ -533,18 +535,51 @@
                     console.error('❌ Error cargando versículo:', error);
                 }
             };
-                        
-            const handleCheckin = async (emotionId, notes) => {
+
+            const loadStory = async () => {
+                try {
+                    console.log('📖 Cargando relato bíblico...');
+                    const res = await api.call('/stories.php?action=personalized', 'GET', null, token);
+
+                    if (res && res.success && res.story) {
+                        console.log('✅ Relato recibido:', res.story);
+                        setCurrentStory(res.story);
+                    } else {
+                        console.warn('⚠️ No se recibió relato válido');
+                        setCurrentStory(null);
+                    }
+                } catch (error) {
+                    console.error('❌ Error cargando relato:', error);
+                }
+            };
+
+            const toggleContentType = () => {
+                const newType = contentType === 'verse' ? 'story' : 'verse';
+                setContentType(newType);
+                if (newType === 'story' && !currentStory) {
+                    loadStory();
+                }
+            };
+
+            const handleCheckin = async (emotionId, notes, contentPref = 'verse') => {
                 try {
                     const res = await api.call('/checkin.php?action=create', 'POST', { emotion_id: emotionId, notes }, token);
-                    
+
                     if (res.success) {
                         // 1. Cerrar modal INMEDIATAMENTE
                         setShowCheckin(false);
-                        
-                        // 2. Recargar TODA la data después de cerrar
-                        setTimeout(() => {
-                            loadData();
+
+                        // 2. Establecer el tipo de contenido preferido
+                        setContentType(contentPref);
+
+                        // 3. Recargar data y contenido según preferencia
+                        setTimeout(async () => {
+                            await loadData();
+                            if (contentPref === 'story') {
+                                loadStory();
+                            } else {
+                                loadVerse(true); // forzar nuevo versículo
+                            }
                         }, 200);
                     }
                 } catch (error) {
@@ -581,7 +616,7 @@
                     <Header user={user} dark={dark} onLogout={onLogout} settings={settings} token={token} onUpdate={onSettingsUpdate} t={t} />
                     
                     <div className="max-w-4xl mx-auto px-4 py-6 pb-24">
-                        {view === 'home' && <HomeView token={token} dark={dark} lang={lang} verse={currentVerse} checkin={todayCheckin} onRefresh={loadVerse} onShowCheckin={() => setShowCheckin(true)} t={t} favoritedVerses={favoritedVerses} onToggleFavorite={toggleFavorite} />}
+                        {view === 'home' && <HomeView token={token} dark={dark} lang={lang} verse={currentVerse} story={currentStory} contentType={contentType} checkin={todayCheckin} onRefresh={contentType === 'verse' ? loadVerse : loadStory} onToggleContent={toggleContentType} onShowCheckin={() => setShowCheckin(true)} t={t} favoritedVerses={favoritedVerses} onToggleFavorite={toggleFavorite} />}
                         {view === 'history' && <HistoryView token={token} dark={dark} lang={lang} t={t} />}
                         {view === 'stats' && <StatsView token={token} dark={dark} lang={lang} t={t} />}
                         {view === 'favorites' && <FavoritesView token={token} dark={dark} lang={lang} t={t} />}
@@ -649,12 +684,15 @@
         const CheckinModal = ({ emotions, lang, dark, onSubmit, onSkip }) => {
             const [selected, setSelected] = useState(null);
             const [notes, setNotes] = useState('');
-            
+            const [contentPref, setContentPref] = useState('verse'); // 'verse' o 'story'
+
             return (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <div className={`w-full max-w-lg ${dark ? 'bg-gray-800' : 'bg-white'} rounded-3xl p-6 shadow-2xl animate-slide-in`}>
-                        <h2 className={`text-2xl font-bold mb-6 ${dark ? 'text-white' : 'text-gray-800'}`}>¿Cómo te sientes hoy?</h2>
-                        
+                    <div className={`w-full max-w-lg ${dark ? 'bg-gray-800' : 'bg-white'} rounded-3xl p-6 shadow-2xl animate-slide-in max-h-[90vh] overflow-y-auto`}>
+                        <h2 className={`text-2xl font-bold mb-6 ${dark ? 'text-white' : 'text-gray-800'}`}>
+                            {lang === 'es' ? '¿Cómo te sientes hoy?' : 'How are you feeling today?'}
+                        </h2>
+
                         <div className="grid grid-cols-3 gap-3 mb-6">
                             {emotions.map(e => (
                                 <button
@@ -675,17 +713,56 @@
                                 </button>
                             ))}
                         </div>
-                        
+
+                        {/* Selección de tipo de contenido */}
+                        <div className="mb-4">
+                            <p className={`text-sm font-semibold mb-3 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                {lang === 'es' ? '¿Qué te gustaría recibir hoy?' : 'What would you like to receive today?'}
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setContentPref('verse')}
+                                    className={`flex-1 p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 ${
+                                        contentPref === 'verse'
+                                            ? 'border-purple-500 bg-purple-500/20'
+                                            : dark
+                                            ? 'border-gray-700 bg-gray-700/50'
+                                            : 'border-gray-200 bg-gray-50'
+                                    }`}
+                                >
+                                    <i data-lucide="book-open" className={`w-5 h-5 ${contentPref === 'verse' ? 'text-purple-500' : dark ? 'text-gray-400' : 'text-gray-600'}`}></i>
+                                    <span className={`font-semibold ${dark ? 'text-white' : 'text-gray-800'}`}>
+                                        {lang === 'es' ? 'Versículo' : 'Verse'}
+                                    </span>
+                                </button>
+                                <button
+                                    onClick={() => setContentPref('story')}
+                                    className={`flex-1 p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 ${
+                                        contentPref === 'story'
+                                            ? 'border-purple-500 bg-purple-500/20'
+                                            : dark
+                                            ? 'border-gray-700 bg-gray-700/50'
+                                            : 'border-gray-200 bg-gray-50'
+                                    }`}
+                                >
+                                    <i data-lucide="scroll-text" className={`w-5 h-5 ${contentPref === 'story' ? 'text-purple-500' : dark ? 'text-gray-400' : 'text-gray-600'}`}></i>
+                                    <span className={`font-semibold ${dark ? 'text-white' : 'text-gray-800'}`}>
+                                        {lang === 'es' ? 'Relato' : 'Story'}
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+
                         <textarea
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
-                            placeholder="Notas opcionales"
-                            rows="3"
+                            placeholder={lang === 'es' ? 'Notas opcionales' : 'Optional notes'}
+                            rows="2"
                             className={`w-full p-3 rounded-xl border ${
                                 dark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
                             } focus:outline-none focus:ring-2 focus:ring-purple-500 mb-4`}
                         ></textarea>
-                        
+
                         <div className="flex gap-3">
                             <button
                                 onClick={onSkip}
@@ -693,14 +770,14 @@
                                     dark ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-800'
                                 } font-semibold hover:opacity-80 transition-all`}
                             >
-                                Saltar
+                                {lang === 'es' ? 'Saltar' : 'Skip'}
                             </button>
                             <button
-                                onClick={() => selected && onSubmit(selected, notes)}
+                                onClick={() => selected && onSubmit(selected, notes, contentPref)}
                                 disabled={!selected}
                                 className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white p-3 rounded-xl font-semibold hover:opacity-90 transition-all disabled:opacity-50"
                             >
-                                Enviar
+                                {lang === 'es' ? 'Enviar' : 'Submit'}
                             </button>
                         </div>
                     </div>
@@ -709,20 +786,41 @@
         };
         
         // Vista Home
-        const HomeView = ({ token, dark, lang, verse, checkin, onRefresh, onShowCheckin, t, favoritedVerses, onToggleFavorite }) => {
-            //const [favorited, setFavorited] = useState(false);
-            
-            /*const toggleFavorite = async () => {
-                if (!verse) return;
-                const res = favorited
-                    ? await api.call(`/favorites.php?action=remove&verse_id=${verse.id}`, 'DELETE', null, token)
-                    : await api.call('/favorites.php?action=add', 'POST', { verse_id: verse.id }, token);
-                if (res.success) setFavorited(!favorited);
-            };*/
-             const isFavorited = verse && favoritedVerses.includes(parseInt(verse.id));
-            
+        const HomeView = ({ token, dark, lang, verse, story, contentType, checkin, onRefresh, onToggleContent, onShowCheckin, t, favoritedVerses, onToggleFavorite }) => {
+            const isFavorited = verse && favoritedVerses.includes(parseInt(verse.id));
+            const isStoryMode = contentType === 'story';
+            const currentContent = isStoryMode ? story : verse;
+
             return (
                 <div className="space-y-6">
+                    {/* Botón para alternar entre Versículo y Relato */}
+                    <div className={`${dark ? 'bg-white/10' : 'bg-white/70'} backdrop-blur-md border ${dark ? 'border-purple-500/20' : 'border-purple-200'} rounded-2xl p-2 shadow-lg`}>
+                        <div className="flex">
+                            <button
+                                onClick={() => contentType !== 'verse' && onToggleContent()}
+                                className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${
+                                    !isStoryMode
+                                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
+                                        : dark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-800'
+                                }`}
+                            >
+                                <i data-lucide="book-open" className="w-5 h-5"></i>
+                                <span>{lang === 'es' ? 'Versículo' : 'Verse'}</span>
+                            </button>
+                            <button
+                                onClick={() => contentType !== 'story' && onToggleContent()}
+                                className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${
+                                    isStoryMode
+                                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
+                                        : dark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-800'
+                                }`}
+                            >
+                                <i data-lucide="scroll-text" className="w-5 h-5"></i>
+                                <span>{lang === 'es' ? 'Relato' : 'Story'}</span>
+                            </button>
+                        </div>
+                    </div>
+
                     {checkin && (
                         <div className={`${dark ? 'bg-white/10' : 'bg-white/70'} backdrop-blur-md border ${dark ? 'border-purple-500/20' : 'border-purple-200'} rounded-3xl p-6 shadow-xl`}>
                             <div className="flex items-center gap-3">
@@ -745,53 +843,104 @@
                             )}
                         </div>
                     )}
-                    
+
+                    {/* Contenido: Versículo o Relato */}
                     <div
-                        onClick={() => !verse && onRefresh()}
-                        className={`${dark ? 'bg-white/10' : 'bg-white/70'} backdrop-blur-md border ${dark ? 'border-purple-500/20' : 'border-purple-200'} rounded-3xl p-8 shadow-2xl cursor-pointer hover:scale-105 transition-all`}
+                        onClick={() => !currentContent && onRefresh()}
+                        className={`${dark ? 'bg-white/10' : 'bg-white/70'} backdrop-blur-md border ${dark ? 'border-purple-500/20' : 'border-purple-200'} rounded-3xl p-8 shadow-2xl transition-all`}
                     >
-                        {verse ? (
-                            <div>
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="flex-1">
-                                        <p className={`text-sm font-semibold ${dark ? 'text-purple-300' : 'text-purple-600'} mb-2`}>
-                                            {verse.reference}
+                        {isStoryMode ? (
+                            // Vista de Relato Bíblico
+                            story ? (
+                                <div>
+                                    <div className="mb-4">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <i data-lucide="scroll-text" className={`w-5 h-5 ${dark ? 'text-purple-300' : 'text-purple-600'}`}></i>
+                                            <p className={`text-sm font-semibold ${dark ? 'text-purple-300' : 'text-purple-600'}`}>
+                                                {story.reference}
+                                            </p>
+                                        </div>
+                                        <h3 className={`text-xl font-bold ${dark ? 'text-white' : 'text-gray-800'} mb-4`}>
+                                            {lang === 'es' ? story.title_es : story.title_en}
+                                        </h3>
+                                        <p className={`text-base leading-relaxed ${dark ? 'text-gray-200' : 'text-gray-700'} whitespace-pre-line`}>
+                                            {lang === 'es' ? story.summary_es : story.summary_en}
                                         </p>
-                                        <p className={`text-lg leading-relaxed ${dark ? 'text-white' : 'text-gray-800'}`}>
-                                            {lang === 'es' ? verse.text_es : verse.text_en}
-                                        </p>
+                                        {story.moral_es && (
+                                            <div className={`mt-4 p-4 rounded-xl ${dark ? 'bg-purple-500/20' : 'bg-purple-100'}`}>
+                                                <p className={`text-sm font-semibold ${dark ? 'text-purple-300' : 'text-purple-700'}`}>
+                                                    <i data-lucide="lightbulb" className="w-4 h-4 inline mr-2"></i>
+                                                    {lang === 'es' ? 'Enseñanza:' : 'Lesson:'}
+                                                </p>
+                                                <p className={`text-sm ${dark ? 'text-gray-200' : 'text-gray-700'} mt-1`}>
+                                                    {lang === 'es' ? story.moral_es : story.moral_en}
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            if (verse) onToggleFavorite(parseInt(verse.id));  // ← NUEVO
+                                            onRefresh();
                                         }}
-                                        className={`p-2 rounded-xl transition-all ${
-                                            isFavorited  // ← CAMBIADO
-                                                ? 'bg-pink-500 text-white'
-                                                : dark
-                                                ? 'bg-white/10 text-white'
-                                                : 'bg-gray-100 text-gray-600'
-                                        }`}
+                                        className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-2 rounded-xl font-semibold hover:opacity-90 transition-all"
                                     >
-                                        <i data-lucide="heart" className={`w-5 h-5 ${isFavorited ? 'fill-current' : ''}`}></i>  {/* ← CAMBIADO */}
+                                        {lang === 'es' ? 'Nuevo Relato' : 'New Story'}
                                     </button>
                                 </div>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onRefresh();
-                                    }}
-                                    className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-2 rounded-xl font-semibold hover:opacity-90 transition-all"
-                                >
-                                    {t.newVerse}
-                                </button>
-                            </div>
+                            ) : (
+                                <div className="text-center py-8">
+                                    <i data-lucide="scroll-text" className={`w-16 h-16 mx-auto mb-4 ${dark ? 'text-purple-400' : 'text-purple-500'} opacity-50`}></i>
+                                    <p className={`${dark ? 'text-gray-300' : 'text-gray-600'}`}>
+                                        {lang === 'es' ? 'Toca para obtener un relato' : 'Tap to get a story'}
+                                    </p>
+                                </div>
+                            )
                         ) : (
-                            <div className="text-center py-8">
-                                <i data-lucide="book-open" className={`w-16 h-16 mx-auto mb-4 ${dark ? 'text-purple-400' : 'text-purple-500'} opacity-50`}></i>
-                                <p className={`${dark ? 'text-gray-300' : 'text-gray-600'}`}>{t.noVerse}</p>
-                            </div>
+                            // Vista de Versículo
+                            verse ? (
+                                <div>
+                                    <div className="flex items-start justify-between mb-4">
+                                        <div className="flex-1">
+                                            <p className={`text-sm font-semibold ${dark ? 'text-purple-300' : 'text-purple-600'} mb-2`}>
+                                                {verse.reference}
+                                            </p>
+                                            <p className={`text-lg leading-relaxed ${dark ? 'text-white' : 'text-gray-800'}`}>
+                                                {lang === 'es' ? verse.text_es : verse.text_en}
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (verse) onToggleFavorite(parseInt(verse.id));
+                                            }}
+                                            className={`p-2 rounded-xl transition-all ${
+                                                isFavorited
+                                                    ? 'bg-pink-500 text-white'
+                                                    : dark
+                                                    ? 'bg-white/10 text-white'
+                                                    : 'bg-gray-100 text-gray-600'
+                                            }`}
+                                        >
+                                            <i data-lucide="heart" className={`w-5 h-5 ${isFavorited ? 'fill-current' : ''}`}></i>
+                                        </button>
+                                    </div>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onRefresh();
+                                        }}
+                                        className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-2 rounded-xl font-semibold hover:opacity-90 transition-all"
+                                    >
+                                        {t.newVerse}
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="text-center py-8">
+                                    <i data-lucide="book-open" className={`w-16 h-16 mx-auto mb-4 ${dark ? 'text-purple-400' : 'text-purple-500'} opacity-50`}></i>
+                                    <p className={`${dark ? 'text-gray-300' : 'text-gray-600'}`}>{t.noVerse}</p>
+                                </div>
+                            )
                         )}
                     </div>
                 </div>
