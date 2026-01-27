@@ -558,6 +558,8 @@
                 setContentType(newType);
                 if (newType === 'story' && !currentStory) {
                     loadStory();
+                } else if (newType === 'verse' && !currentVerse) {
+                    loadVerse(true);
                 }
             };
 
