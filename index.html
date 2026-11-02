@@ -2,256 +2,255 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#8B5CF6">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F0E8">
     <meta name="description" content="Recordatorios de oración personalizados basados en tus emociones">
     <title>Maná Digital</title>
-    
-    <!-- PWA -->
+
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    
-    <!-- Tailwind CSS -->
-    <!-- <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.0/dist/tailwind.min.css" rel="stylesheet"> -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <style type="text/tailwindcss">
-      @theme {
-        --color-clifford: #da373d;
-      }
-    </style>
-    
-    <!-- React -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    
+    <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Manrope:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/lucide-static@0.460.0/font/lucide.css">
+
     <style>
-        body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-        .glassmorphism { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
-        .dark .glassmorphism { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); }
-        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .animate-slide-in { animation: slideIn 0.3s ease-out; }
-        .spinner { border: 3px solid rgba(139,92,246,0.3); border-top-color: #8B5CF6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        html, body { margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+        body { transition: background-color .4s ease; }
+        button { font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        input, textarea, select { font: inherit; }
+        @keyframes slideUp { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes spin { to { transform: rotate(360deg); } }
+        .anim-up { animation: slideUp .35s cubic-bezier(.2,.8,.2,1); }
+        .anim-fade { animation: fadeIn .4s ease; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
+        /** @jsxRuntime classic */
         const { useState, useEffect, useRef } = React;
-        
-        // Configuración de API
+
         const API_BASE = '/api';
-        
-        // Servicio de API
         const api = {
             call: async (endpoint, method = 'GET', body = null, token = null) => {
                 const headers = { 'Content-Type': 'application/json' };
                 if (token) headers['Authorization'] = `Bearer ${token}`;
-
                 const options = { method, headers };
                 if (body && method !== 'GET') options.body = JSON.stringify(body);
-
                 const response = await fetch(`${API_BASE}${endpoint}`, options);
                 return response.json();
             }
         };
 
-        // Constante para el versículo de notificación pendiente
         const NOTIFICATION_VERSE_KEY = 'pending_notification_verse';
+        const THEME_MODE_KEY = 'mana_theme_mode'; // 'auto' | 'day' | 'night'
 
-        // Registrar Service Worker
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js')
-                .then(registration => {
-                    console.log('✅ Service Worker registrado:', registration.scope);
-                })
-                .catch(error => {
-                    console.error('❌ Error registrando Service Worker:', error);
-                });
+            navigator.serviceWorker.register('/sw.js').catch(err => console.error('SW error:', err));
         }
-        
-        // Traducciones
-        const translations = {
-            es: {
-                login: 'Iniciar Sesión',
-                register: 'Registrarse',
-                name: 'Nombre',
-                email: 'Email',
-                password: 'Contraseña',
-                noAccount: '¿No tienes cuenta? Regístrate',
-                hasAccount: '¿Ya tienes cuenta? Inicia sesión',
-                home: 'Inicio',
-                history: 'Historial',
-                stats: 'Estadísticas',
-                favorites: 'Favoritos',
-                settings: 'Ajustes',
-                logout: 'Cerrar Sesión',
-                howFeeling: '¿Cómo te sientes hoy?',
-                skip: 'Saltar',
-                submit: 'Enviar',
-                notes: 'Notas opcionales',
-                newVerse: 'Nuevo Versículo',
-                noVerse: 'Toca para obtener un versículo',
-                noHistory: 'Aún no hay historial',
-                noFavorites: 'Aún no tienes favoritos',
-                darkMode: 'Modo Oscuro',
-                language: 'Idioma',
-                save: 'Guardar',
-                emotionalJourney: 'Tu Camino Emocional',
-                checkinsLast30Days: 'Check-ins (últimos 30 días)',
-                currentStreak: 'Racha Actual',
-                days: 'días',
-                loading: 'Cargando...'
+
+        // ============ TEMAS: Día (Pergamino) / Noche (Nocturno) ============
+        const THEMES = {
+            day: {
+                name: 'day', bg: '#F5F0E8', surface: '#FFFDF9', line: '#E6DED2', line2: '#F1EBE1',
+                ink: '#26211C', ink2: '#3D362F', muted: '#6E655B', faint: '#9C9285',
+                accent: '#6B3FBF', accentInk: '#FFFFFF', accentSoft: '#EEE7F8', accentText: '#5A33A8',
+                track: '#EAE3D8', danger: '#B42318', overlay: 'rgba(38,33,28,.55)',
+                serif: "'Newsreader', Georgia, serif", sans: "'Manrope', system-ui, sans-serif",
+                serifSize: 1, radius: 16, pill: false
             },
-            en: {
-                login: 'Login',
-                register: 'Register',
-                name: 'Name',
-                email: 'Email',
-                password: 'Password',
-                noAccount: "Don't have an account? Register",
-                hasAccount: 'Already have an account? Login',
-                home: 'Home',
-                history: 'History',
-                stats: 'Statistics',
-                favorites: 'Favorites',
-                settings: 'Settings',
-                logout: 'Logout',
-                howFeeling: 'How are you feeling today?',
-                skip: 'Skip',
-                submit: 'Submit',
-                notes: 'Optional notes',
-                newVerse: 'New Verse',
-                noVerse: 'Tap to get a verse',
-                noHistory: 'No history yet',
-                noFavorites: 'No favorites yet',
-                darkMode: 'Dark Mode',
-                language: 'Language',
-                save: 'Save',
-                emotionalJourney: 'Your Emotional Journey',
-                checkinsLast30Days: 'Check-ins (last 30 days)',
-                currentStreak: 'Current Streak',
-                days: 'days',
-                loading: 'Loading...'
+            night: {
+                name: 'night', bg: '#13111C', surface: '#1D1A29', line: '#2C2840', line2: '#2C2840',
+                ink: '#F3EFE6', ink2: '#CFCADB', muted: '#A39DB5', faint: '#7C7691',
+                accent: '#E8C478', accentInk: '#13111C', accentSoft: 'rgba(232,196,120,.10)', accentText: '#E8C478',
+                track: '#2C2840', danger: '#F0A7A0', overlay: 'rgba(0,0,0,.6)',
+                serif: "'Instrument Serif', Georgia, serif", sans: "'DM Sans', system-ui, sans-serif",
+                serifSize: 1.18, radius: 28, pill: true
             }
         };
-        
-        // Componente Principal
+        const isNightHour = () => { const h = new Date().getHours(); return h >= 19 || h < 6; };
+        const resolveTheme = (mode) => THEMES[mode === 'night' || (mode === 'auto' && isNightHour()) ? 'night' : 'day'];
+
+        const applyChrome = (T) => {
+            document.body.style.background = T.bg;
+            const meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', T.bg);
+        };
+
+        const translations = {
+            es: {
+                login: 'Iniciar sesión', register: 'Crear cuenta', name: 'Nombre', email: 'Email', password: 'Contraseña',
+                noAccount: '¿No tienes cuenta?', noAccountCta: 'Regístrate', hasAccount: '¿Ya tienes cuenta?', hasAccountCta: 'Inicia sesión',
+                tagline: 'Una palabra para cada día, según cómo te sientes.',
+                home: 'Inicio', history: 'Historial', stats: 'Camino', favorites: 'Favoritos', settings: 'Ajustes', logout: 'Cerrar sesión',
+                howFeeling: '¿Cómo te sientes hoy?', skip: 'Saltar', submit: 'Recibir mi palabra', notes: 'Añade una nota (opcional)',
+                receive: '¿Qué quieres recibir?', verse: 'Versículo', story: 'Relato',
+                newVerse: 'Otro versículo', newStory: 'Otro relato', noVerse: 'Toca para recibir un versículo', noStory: 'Toca para recibir un relato',
+                lesson: 'Enseñanza', todayWord: 'Tu palabra de hoy', hello: 'Hola',
+                noHistory: 'Aquí aparecerán los versículos que recibas.', noFavorites: 'Guarda un versículo con el corazón y lo encontrarás aquí.',
+                appearance: 'Apariencia', theme: 'Tema', day: 'Día', night: 'Noche', auto: 'Auto', autoHint: 'Noche de 19:00 a 6:00',
+                language: 'Idioma', save: 'Guardar', reminders: 'Recordatorios', notifications: 'Notificaciones', pause: 'Pausar por ahora',
+                frequency: 'Frecuencia', interval: 'Cada X horas', fixed: 'Horarios fijos', everyHours: 'Cada cuántas horas',
+                add: 'Añadir', noSchedules: 'Sin horarios aún', dailyCheckin: 'Recordatorio de check-in',
+                emotionalJourney: 'Tu camino', last30: 'Últimos 30 días', currentStreak: 'Racha actual', checkins: 'Check-ins',
+                mostFelt: 'Lo que más sentiste', days: 'días', loading: 'Cargando…', verses: 'versículos'
+            },
+            en: {
+                login: 'Log in', register: 'Create account', name: 'Name', email: 'Email', password: 'Password',
+                noAccount: "Don't have an account?", noAccountCta: 'Sign up', hasAccount: 'Already have an account?', hasAccountCta: 'Log in',
+                tagline: 'A word for every day, based on how you feel.',
+                home: 'Home', history: 'History', stats: 'Journey', favorites: 'Favorites', settings: 'Settings', logout: 'Log out',
+                howFeeling: 'How are you feeling today?', skip: 'Skip', submit: 'Get my word', notes: 'Add a note (optional)',
+                receive: 'What would you like to receive?', verse: 'Verse', story: 'Story',
+                newVerse: 'Another verse', newStory: 'Another story', noVerse: 'Tap to get a verse', noStory: 'Tap to get a story',
+                lesson: 'Lesson', todayWord: 'Your word today', hello: 'Hi',
+                noHistory: 'Verses you receive will appear here.', noFavorites: 'Save a verse with the heart and find it here.',
+                appearance: 'Appearance', theme: 'Theme', day: 'Day', night: 'Night', auto: 'Auto', autoHint: 'Night from 7pm to 6am',
+                language: 'Language', save: 'Save', reminders: 'Reminders', notifications: 'Notifications', pause: 'Pause for now',
+                frequency: 'Frequency', interval: 'Every X hours', fixed: 'Fixed times', everyHours: 'Every how many hours',
+                add: 'Add', noSchedules: 'No times yet', dailyCheckin: 'Check-in reminder',
+                emotionalJourney: 'Your journey', last30: 'Last 30 days', currentStreak: 'Current streak', checkins: 'Check-ins',
+                mostFelt: 'What you felt most', days: 'days', loading: 'Loading…', verses: 'verses'
+            }
+        };
+
+        // ============ PRIMITIVAS ============
+        const Icon = ({ n, size = 20, style }) => <i className={`icon-${n}`} style={{ fontSize: size, lineHeight: 1, display: 'inline-flex', ...style }}></i>;
+
+        const Spinner = ({ T }) => (
+            <div style={{ width: 32, height: 32, borderRadius: '50%', border: `2px solid ${T.line}`, borderTopColor: T.accent, animation: 'spin 1s linear infinite' }}></div>
+        );
+
+        const FullCenter = ({ T, children }) => (
+            <div style={{ minHeight: '100dvh', background: T.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{children}</div>
+        );
+
+        const Segmented = ({ T, options, value, onChange }) => (
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${options.length}, minmax(0,1fr))`, background: T.track, borderRadius: T.pill ? 999 : 14, padding: 4 }}>
+                {options.map(o => {
+                    const on = o.value === value;
+                    return (
+                        <button key={o.value} onClick={() => onChange(o.value)} style={{
+                            height: 40, border: 'none', borderRadius: T.pill ? 999 : 11, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                            background: on ? (T.pill ? T.ink : T.surface) : 'transparent', color: on ? (T.pill ? T.bg : T.ink) : T.muted,
+                            fontSize: 14, fontWeight: on ? 600 : 500, boxShadow: on && !T.pill ? '0 1px 2px rgba(0,0,0,.08)' : 'none', transition: 'all .2s'
+                        }}>{o.icon && <Icon n={o.icon} size={16} />}{o.label}</button>
+                    );
+                })}
+            </div>
+        );
+
+        const Toggle = ({ T, on, onChange }) => (
+            <button onClick={() => onChange(!on)} aria-pressed={on} style={{
+                width: 52, height: 32, borderRadius: 16, border: 'none', padding: 3, flexShrink: 0, display: 'flex',
+                justifyContent: on ? 'flex-end' : 'flex-start', background: on ? T.accent : T.track, transition: 'background .2s'
+            }}>
+                <span style={{ width: 26, height: 26, borderRadius: '50%', background: T.pill && on ? T.bg : '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.2)' }}></span>
+            </button>
+        );
+
+        const PrimaryBtn = ({ T, children, style, ...p }) => (
+            <button {...p} style={{ height: 56, border: 'none', borderRadius: T.pill ? 28 : 16, background: T.accent, color: T.accentInk, fontSize: 16, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: p.disabled ? .45 : 1, ...style }}>{children}</button>
+        );
+        const GhostBtn = ({ T, children, style, ...p }) => (
+            <button {...p} style={{ height: 52, borderRadius: T.pill ? 26 : 16, border: `1px solid ${T.line}`, background: 'transparent', color: T.ink, fontSize: 15, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, ...style }}>{children}</button>
+        );
+        const IconBtn = ({ T, n, onClick, active, label }) => (
+            <button onClick={onClick} aria-label={label} style={{
+                width: 44, height: 44, borderRadius: '50%', border: active ? 'none' : `1px solid ${T.line}`, flexShrink: 0,
+                background: active ? T.accentSoft : (T.pill ? 'transparent' : T.surface), color: active ? T.accentText : T.ink,
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}><Icon n={n} size={19} /></button>
+        );
+
+        const Card = ({ T, children, style }) => (
+            <div style={{ background: T.surface, border: `1px solid ${T.line2}`, borderRadius: T.pill ? 24 : 22, ...style }}>{children}</div>
+        );
+        const Ref = ({ T, children, style }) => (
+            <div style={{ fontSize: 12, fontWeight: T.pill ? 500 : 700, letterSpacing: T.pill ? '.14em' : '.06em', textTransform: 'uppercase', color: T.accentText, ...style }}>{children}</div>
+        );
+        const PageTitle = ({ T, children, right }) => (
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, padding: '8px 4px 16px' }}>
+                <h2 style={{ margin: 0, fontFamily: T.serif, fontWeight: 400, fontSize: 36 * T.serifSize, lineHeight: 1.05, color: T.ink }}>{children}</h2>
+                {right}
+            </div>
+        );
+        const Empty = ({ T, icon, text }) => (
+            <div style={{ padding: '64px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, color: T.muted }}>
+                <Icon n={icon} size={32} style={{ color: T.faint }} />
+                <p style={{ margin: 0, maxWidth: 260, lineHeight: 1.5, fontSize: 15 }}>{text}</p>
+            </div>
+        );
+        const inputStyle = (T) => ({
+            height: 54, borderRadius: T.pill ? 27 : 14, border: `1px solid ${T.line}`, background: T.surface, color: T.ink,
+            padding: '0 18px', fontSize: 16, outline: 'none', width: '100%', boxSizing: 'border-box'
+        });
+
+        // ============ APP ============
         const App = () => {
             const [token, setToken] = useState(localStorage.getItem('prayer_token'));
             const [user, setUser] = useState(null);
             const [loading, setLoading] = useState(true);
             const [settings, setSettings] = useState({ language: 'es', dark_mode: false });
             const [view, setView] = useState('home');
-            
-            // Agregar después de los otros useEffect en MainApp
-            // Optimizar iconos
-            // Inicializar iconos de forma optimizada
-            useEffect(() => {
-                // Primera inicialización inmediata
-                if (typeof lucide !== 'undefined') {
-                    lucide.createIcons();
-                }
-                
-                // Luego cada 2 segundos (más lento que antes pero suficiente)
-                const interval = setInterval(() => {
-                    if (typeof lucide !== 'undefined') {
-                        lucide.createIcons();
-                    }
-                }, 2000); // Cada 2 segundos en vez de 1
-                
-                return () => clearInterval(interval);
-            }, []);
+            const [themeMode, setThemeModeState] = useState(localStorage.getItem(THEME_MODE_KEY) || 'auto');
+            const [, tick] = useState(0);
+
+            // Re-evaluar el tema cada minuto (modo Auto)
+            useEffect(() => { const i = setInterval(() => tick(x => x + 1), 60000); return () => clearInterval(i); }, []);
+
+            const setThemeMode = (m) => { localStorage.setItem(THEME_MODE_KEY, m); setThemeModeState(m); };
+            const T = resolveTheme(themeMode);
+            useEffect(() => applyChrome(T), [T.name]);
 
             useEffect(() => {
                 if (token) {
                     api.call('/auth.php?action=verify', 'GET', null, token)
                         .then(res => {
-                            console.log('Verify response:', res); // Debug
-                            if (res.success && res.user) {
-                                setUser(res.user);
-                                loadSettings();
-                            } else {
-                                console.error('Token inválido, limpiando...'); // Debug
-                                localStorage.removeItem('prayer_token');
-                                setToken(null);
-                                setUser(null);
-                            }
+                            if (res.success && res.user) { setUser(res.user); loadSettings(); }
+                            else { localStorage.removeItem('prayer_token'); setToken(null); setUser(null); }
                             setLoading(false);
                         })
-                        .catch((error) => {
-                            console.error('Error verificando token:', error); // Debug
-                            localStorage.removeItem('prayer_token');
-                            setToken(null);
-                            setUser(null);
-                            setLoading(false);
-                        });
-                } else {
-                    setLoading(false);
-                }
+                        .catch(() => { localStorage.removeItem('prayer_token'); setToken(null); setUser(null); setLoading(false); });
+                } else setLoading(false);
             }, [token]);
-            
+
             const loadSettings = async () => {
                 const res = await api.call('/settings.php?action=get', 'GET', null, token);
-                if (res.success) setSettings(res.settings);
-            };
-            
-            const handleAuth = async (isLogin, data) => {
-                const action = isLogin ? 'login' : 'register';
-                const res = await api.call(`/auth.php?action=${action}`, 'POST', data);
                 if (res.success) {
-                    setToken(res.token);
-                    setUser(res.user);
-                    localStorage.setItem('prayer_token', res.token);
+                    setSettings(res.settings);
+                    // Si el usuario nunca eligió tema en este dispositivo, respetar dark_mode del servidor
+                    if (!localStorage.getItem(THEME_MODE_KEY) && res.settings.dark_mode) setThemeMode('night');
                 }
+            };
+
+            const handleAuth = async (isLogin, data) => {
+                const res = await api.call(`/auth.php?action=${isLogin ? 'login' : 'register'}`, 'POST', data);
+                if (res.success) { setToken(res.token); setUser(res.user); localStorage.setItem('prayer_token', res.token); }
                 return res;
             };
-            
-            const handleLogout = () => {
-                localStorage.removeItem('prayer_token');
-                setToken(null);
-                setUser(null);
-            };
-            
-            useEffect(() => { lucide.createIcons(); });
-            
-            if (loading) {
-                return (
-                    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-blue-100 flex items-center justify-center">
-                        <div className="spinner"></div>
-                    </div>
-                );
-            }
-            
-            if (!token) {
-                return <AuthScreen onAuth={handleAuth} lang={settings.language} />;
-            }
-            
+            const handleLogout = () => { localStorage.removeItem('prayer_token'); setToken(null); setUser(null); setView('home'); };
+
+            if (loading) return <FullCenter T={T}><Spinner T={T} /></FullCenter>;
+            if (!token) return <AuthScreen T={T} onAuth={handleAuth} lang={settings.language || 'es'} />;
+
             return (
-                <MainApp 
-                    user={user}
-                    token={token}
-                    settings={settings}
-                    onLogout={handleLogout}
-                    view={view}
-                    setView={setView}
-                    onSettingsUpdate={setSettings}
-                />
+                <MainApp user={user} token={token} settings={settings} onLogout={handleLogout} view={view} setView={setView}
+                    onSettingsUpdate={setSettings} T={T} themeMode={themeMode} setThemeMode={setThemeMode} />
             );
         };
-        
-        // Pantalla de Autenticación
-        const AuthScreen = ({ onAuth, lang }) => {
+
+        // ============ LOGIN ============
+        const AuthScreen = ({ T, onAuth, lang }) => {
             const [isLogin, setIsLogin] = useState(true);
             const [name, setName] = useState('');
             const [email, setEmail] = useState('');
@@ -259,1191 +258,530 @@
             const [error, setError] = useState('');
             const [loading, setLoading] = useState(false);
             const t = translations[lang];
-            
+            const night = T.name === 'night';
+
             const handleSubmit = async (e) => {
-                e.preventDefault();
-                setError('');
-                setLoading(true);
-                
-                const data = isLogin ? { email, password } : { name, email, password };
-                const res = await onAuth(isLogin, data);
-                
-                if (!res.success) {
-                    setError(res.error || 'Error occurred');
-                }
+                e.preventDefault(); setError(''); setLoading(true);
+                const res = await onAuth(isLogin, isLogin ? { email, password } : { name, email, password });
+                if (!res.success) setError(res.error || 'Error');
                 setLoading(false);
             };
-            
+
             return (
-                <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-blue-500 flex items-center justify-center p-4">
-                    <div className="w-full max-w-md glassmorphism rounded-3xl p-8 shadow-2xl animate-slide-in">
-                        <div className="text-center mb-8">
-                            <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                                <i data-lucide="book-open" className="w-10 h-10 text-purple-600"></i>
-                            </div>
-                            <h1 className="text-3xl font-bold text-white mb-2">Maná Digital</h1>
-                            <p className="text-white/80">Tu compañero de oración personalizado</p>
-                        </div>
-                        
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            {!isLogin && (
-                                <input
-                                    type="text"
-                                    placeholder={t.name}
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    required
-                                    className="w-full p-4 rounded-xl bg-white/20 border border-white/30 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50"
-                                />
-                            )}
-                            
-                            <input
-                                type="email"
-                                placeholder={t.email}
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                className="w-full p-4 rounded-xl bg-white/20 border border-white/30 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50"
-                            />
-                            
-                            <input
-                                type="password"
-                                placeholder={t.password}
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                className="w-full p-4 rounded-xl bg-white/20 border border-white/30 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50"
-                            />
-                            
-                            {error && (
-                                <div className="bg-red-500/20 border border-red-500/50 text-white p-3 rounded-xl text-sm">
-                                    {error}
-                                </div>
-                            )}
-                            
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="w-full bg-white text-purple-600 p-4 rounded-xl font-bold hover:bg-white/90 transition-all disabled:opacity-50"
-                            >
-                                {loading ? t.loading : (isLogin ? t.login : t.register)}
+                <div style={{ minHeight: '100dvh', background: T.bg, color: T.ink, fontFamily: T.sans, display: 'flex', justifyContent: 'center' }}>
+                    <div className="anim-fade" style={{ width: '100%', maxWidth: 440, padding: '72px 28px 36px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: night ? 'center' : 'flex-start', textAlign: night ? 'center' : 'left' }}>
+                        {night
+                            ? <div style={{ width: 56, height: 56, borderRadius: '50%', border: `1px solid ${T.accent}`, color: T.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon n="book-open" size={24} /></div>
+                            : <img src="/icon-192.png" alt="" style={{ width: 64, height: 64, borderRadius: 16 }} />}
+                        <h1 style={{ margin: '28px 0 0', fontFamily: T.serif, fontWeight: 400, fontSize: night ? 56 : 48, lineHeight: 1 }}>
+                            Maná {night ? <span style={{ fontStyle: 'italic', color: T.accent }}>Digital</span> : 'Digital'}
+                        </h1>
+                        <p style={{ margin: '14px 0 0', fontSize: 16, lineHeight: 1.5, color: T.muted, maxWidth: 290 }}>{t.tagline}</p>
+
+                        <form onSubmit={handleSubmit} style={{ marginTop: 'auto', paddingTop: 48, width: '100%', display: 'flex', flexDirection: 'column', gap: 12, textAlign: 'left' }}>
+                            {!isLogin && <input type="text" placeholder={t.name} value={name} onChange={e => setName(e.target.value)} required style={inputStyle(T)} />}
+                            <input type="email" placeholder={t.email} value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" style={inputStyle(T)} />
+                            <input type="password" placeholder={t.password} value={password} onChange={e => setPassword(e.target.value)} required autoComplete={isLogin ? 'current-password' : 'new-password'} style={inputStyle(T)} />
+                            {error && <div style={{ fontSize: 14, color: T.danger, padding: '4px 4px 0' }}>{error}</div>}
+                            <PrimaryBtn T={T} type="submit" disabled={loading} style={{ marginTop: 8 }}>{loading ? t.loading : (isLogin ? t.login : t.register)}</PrimaryBtn>
+                            <button type="button" onClick={() => { setIsLogin(!isLogin); setError(''); }} style={{ height: 44, border: 'none', background: 'none', color: T.muted, fontSize: 14 }}>
+                                {isLogin ? t.noAccount : t.hasAccount} <span style={{ color: T.accentText, fontWeight: 600 }}>{isLogin ? t.noAccountCta : t.hasAccountCta}</span>
                             </button>
                         </form>
-                        
-                        <div className="mt-6 text-center">
-                            <button
-                                onClick={() => {
-                                    setIsLogin(!isLogin);
-                                    setError('');
-                                }}
-                                className="text-white/80 hover:text-white transition-colors"
-                            >
-                                {isLogin ? t.noAccount : t.hasAccount}
-                            </button>
-                        </div>
                     </div>
                 </div>
             );
         };
-        
-        const MainApp = ({ user, token, settings, onLogout, view, setView, onSettingsUpdate }) => {
+
+        // ============ CONTENEDOR PRINCIPAL ============
+        const MainApp = ({ user, token, settings, onLogout, view, setView, onSettingsUpdate, T, themeMode, setThemeMode }) => {
             const [showCheckin, setShowCheckin] = useState(false);
             const [todayCheckin, setTodayCheckin] = useState(null);
             const [currentVerse, setCurrentVerse] = useState(null);
             const [currentStory, setCurrentStory] = useState(null);
-            const [contentType, setContentType] = useState('verse'); // 'verse' o 'story'
+            const [contentType, setContentType] = useState('verse');
             const [contentLoading, setContentLoading] = useState(false);
             const [emotions, setEmotions] = useState([]);
             const [loading, setLoading] = useState(true);
             const [favoritedVerses, setFavoritedVerses] = useState([]);
-            const [emotionsCached, setEmotionsCached] = useState(false);
-            const dark = settings.dark_mode;
             const lang = settings.language || 'es';
             const t = translations[lang];
-            
-            useEffect(() => {
-                loadData();
-            }, []);
 
-            // Escuchar mensajes del Service Worker
+            useEffect(() => { loadData(); }, []);
+
             useEffect(() => {
                 const handleSWMessage = (event) => {
-                    const { type, verse } = event.data;
-
-                    if (type === 'SHOW_NOTIFICATION_VERSE' && verse) {
-                        console.log('📬 Versículo recibido desde notificación:', verse);
-                        setCurrentVerse(verse);
-                        // Limpiar el versículo pendiente
-                        localStorage.removeItem(NOTIFICATION_VERSE_KEY);
-                    }
-
-                    if (type === 'SAVE_NOTIFICATION_VERSE' && verse) {
-                        console.log('💾 Guardando versículo de notificación:', verse);
-                        localStorage.setItem(NOTIFICATION_VERSE_KEY, JSON.stringify(verse));
-                    }
+                    const { type, verse } = event.data || {};
+                    if (type === 'SHOW_NOTIFICATION_VERSE' && verse) { setCurrentVerse(verse); setContentType('verse'); setView('home'); localStorage.removeItem(NOTIFICATION_VERSE_KEY); }
+                    if (type === 'SAVE_NOTIFICATION_VERSE' && verse) localStorage.setItem(NOTIFICATION_VERSE_KEY, JSON.stringify(verse));
                 };
-
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.addEventListener('message', handleSWMessage);
-                }
-
-                // Verificar si hay un versículo pendiente de una notificación
-                const pendingVerse = localStorage.getItem(NOTIFICATION_VERSE_KEY);
-                if (pendingVerse) {
-                    try {
-                        const verse = JSON.parse(pendingVerse);
-                        console.log('📖 Cargando versículo pendiente:', verse);
-                        setCurrentVerse(verse);
-                        localStorage.removeItem(NOTIFICATION_VERSE_KEY);
-                    } catch (e) {
-                        console.error('Error parsing pending verse:', e);
-                        localStorage.removeItem(NOTIFICATION_VERSE_KEY);
-                    }
-                }
-
-                return () => {
-                    if ('serviceWorker' in navigator) {
-                        navigator.serviceWorker.removeEventListener('message', handleSWMessage);
-                    }
-                };
+                if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', handleSWMessage);
+                const pending = localStorage.getItem(NOTIFICATION_VERSE_KEY);
+                if (pending) { try { setCurrentVerse(JSON.parse(pending)); } catch (e) {} localStorage.removeItem(NOTIFICATION_VERSE_KEY); }
+                return () => { if ('serviceWorker' in navigator) navigator.serviceWorker.removeEventListener('message', handleSWMessage); };
             }, []);
 
             const loadData = async () => {
                 try {
-                    console.log('⚡ Loading data...');
                     setLoading(true);
-                    
-                    // Cargar emociones SOLO si no están en caché
-                    let emotionsPromise;
-                    if (!emotionsCached || emotions.length === 0) {
-                        console.log('📥 Cargando emociones desde API...');
-                        emotionsPromise = api.call('/checkin.php?action=emotions', 'GET', null, token);
-                    } else {
-                        console.log('⚡ Usando emociones del caché');
-                        emotionsPromise = Promise.resolve({ success: true, emotions });
-                    }
-                    
-                    // Checkin siempre se carga (puede cambiar)
-                    const checkinPromise = api.call('/checkin.php?action=today', 'GET', null, token);
-                    
                     const [emotionsRes, checkinRes] = await Promise.all([
-                        emotionsPromise,
-                        checkinPromise
+                        emotions.length ? Promise.resolve({ success: true, emotions }) : api.call('/checkin.php?action=emotions', 'GET', null, token),
+                        api.call('/checkin.php?action=today', 'GET', null, token)
                     ]);
-                    
-                    if (emotionsRes.success && emotionsRes.emotions) {
-                        setEmotions(emotionsRes.emotions);
-                        setEmotionsCached(true);
-                    }
-                    
+                    if (emotionsRes.success && emotionsRes.emotions) setEmotions(emotionsRes.emotions);
                     if (checkinRes.success) {
                         setTodayCheckin(checkinRes.checkin);
-                        
-                        if (!checkinRes.has_checkin) {
-                            setShowCheckin(true);
-                        } else {
-                            await loadVerse();
-                        }
+                        if (!checkinRes.has_checkin) setShowCheckin(true); else await loadVerse();
                     }
-                    
-                    // Cargar favoritos (solo una vez)
-                    if (favoritedVerses.length === 0) {
-                        await loadFavorites();
-                    }
-                    
-                } catch (error) {
-                    console.error('Error loading data:', error);
-                } finally {
-                    setLoading(false);
-                }
+                    if (favoritedVerses.length === 0) await loadFavorites();
+                } catch (error) { console.error('Error loading data:', error); }
+                finally { setLoading(false); }
             };
 
             const loadFavorites = async () => {
                 try {
                     const res = await api.call('/favorites.php?action=list', 'GET', null, token);
-                    if (res.success && res.favorites) {
-                        // Guardar solo los IDs
-                        const ids = res.favorites.map(f => parseInt(f.verse_id));
-                        setFavoritedVerses(ids);
-                        console.log('✅ Favoritos cargados:', ids);
-                    }
-                } catch (error) {
-                    console.error('Error loading favorites:', error);
-                }
+                    if (res.success && res.favorites) setFavoritedVerses(res.favorites.map(f => parseInt(f.verse_id)));
+                } catch (e) { console.error(e); }
             };
 
             const toggleFavorite = async (verseId) => {
                 try {
-                    const isFavorited = favoritedVerses.includes(verseId);
-                    
-                    if (isFavorited) {
-                        // Remover
+                    if (favoritedVerses.includes(verseId)) {
                         const res = await api.call(`/favorites.php?action=remove&verse_id=${verseId}`, 'DELETE', null, token);
-                        if (res.success) {
-                            setFavoritedVerses(prev => prev.filter(id => id !== verseId));
-                            console.log('✅ Favorito removido');
-                        }
+                        if (res.success) setFavoritedVerses(prev => prev.filter(id => id !== verseId));
                     } else {
-                        // Agregar
                         const res = await api.call('/favorites.php?action=add', 'POST', { verse_id: verseId }, token);
-                        if (res.success) {
-                            setFavoritedVerses(prev => [...prev, verseId]);
-                            console.log('✅ Favorito agregado');
-                        }
+                        if (res.success) setFavoritedVerses(prev => [...prev, verseId]);
                     }
-                } catch (error) {
-                    console.error('Error toggling favorite:', error);
-                }
-            };
-            
-            const fallbackVerse = {
-                id: 1,
-                reference: 'Juan 3:16',
-                text_es: 'Porque de tal manera amó Dios al mundo, que ha dado a su Hijo unigénito, para que todo aquel que en él cree, no se pierda, mas tenga vida eterna.',
-                text_en: 'For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.'
+                } catch (e) { console.error(e); }
             };
 
-            const fallbackStory = {
-                id: 1,
-                title_es: 'David y Goliat',
-                title_en: 'David and Goliath',
-                reference: '1 Samuel 17',
-                summary_es: 'Un joven pastor llamado David enfrentó al gigante filisteo Goliat cuando todo el ejército de Israel tenía miedo. Con solo una honda y cinco piedras, y con fe inquebrantable en Dios, David derrotó al gigante.',
-                summary_en: 'A young shepherd named David faced the Philistine giant Goliath when all of Israel\'s army was afraid. With just a sling and five stones, and unwavering faith in God, David defeated the giant.',
-                moral_es: 'Con fe en Dios, podemos superar cualquier obstáculo que parezca imposible.',
-                moral_en: 'With faith in God, we can overcome any obstacle that seems impossible.'
-            };
+            const fallbackVerse = { id: 1, reference: 'Juan 3:16', text_es: 'Porque de tal manera amó Dios al mundo, que ha dado a su Hijo unigénito, para que todo aquel que en él cree, no se pierda, mas tenga vida eterna.', text_en: 'For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.' };
+            const fallbackStory = { id: 1, title_es: 'David y Goliat', title_en: 'David and Goliath', reference: '1 Samuel 17', summary_es: 'Un joven pastor llamado David enfrentó al gigante filisteo Goliat cuando todo el ejército de Israel tenía miedo. Con solo una honda y cinco piedras, y con fe inquebrantable en Dios, David derrotó al gigante.', summary_en: "A young shepherd named David faced the Philistine giant Goliath when all of Israel's army was afraid. With just a sling and five stones, and unwavering faith in God, David defeated the giant.", moral_es: 'Con fe en Dios, podemos superar cualquier obstáculo que parezca imposible.', moral_en: 'With faith in God, we can overcome any obstacle that seems impossible.' };
 
             const loadVerse = async (forceNew = false) => {
                 setContentLoading(true);
                 try {
-                    // Si no se fuerza nuevo, verificar si hay versículo pendiente de notificación
                     if (!forceNew) {
-                        const pendingVerse = localStorage.getItem(NOTIFICATION_VERSE_KEY);
-                        if (pendingVerse) {
-                            try {
-                                const verse = JSON.parse(pendingVerse);
-                                console.log('📖 Cargando versículo de notificación:', verse);
-                                setCurrentVerse(verse);
-                                localStorage.removeItem(NOTIFICATION_VERSE_KEY);
-                                setContentLoading(false);
-                                return; // No llamar a la API
-                            } catch (e) {
-                                console.error('Error parsing pending verse:', e);
-                                localStorage.removeItem(NOTIFICATION_VERSE_KEY);
-                            }
-                        }
+                        const pending = localStorage.getItem(NOTIFICATION_VERSE_KEY);
+                        if (pending) { try { setCurrentVerse(JSON.parse(pending)); localStorage.removeItem(NOTIFICATION_VERSE_KEY); setContentLoading(false); return; } catch (e) { localStorage.removeItem(NOTIFICATION_VERSE_KEY); } }
                     }
-
-                    console.log('🔵 Cargando versículo desde API...');
                     const res = await api.call('/verses.php?action=personalized', 'GET', null, token);
-                    console.log('🔵 Respuesta:', res);
-
-                    if (res && res.success && res.verse) {
-                        console.log('✅ Versículo recibido:', res.verse);
-                        setCurrentVerse(res.verse);
-                    } else {
-                        console.warn('⚠️ No se recibió versículo válido, usando fallback');
-                        setCurrentVerse(fallbackVerse);
-                    }
-                } catch (error) {
-                    console.error('❌ Error cargando versículo:', error);
-                    setCurrentVerse(fallbackVerse);
-                } finally {
-                    setContentLoading(false);
-                }
+                    setCurrentVerse(res && res.success && res.verse ? res.verse : fallbackVerse);
+                } catch (e) { setCurrentVerse(fallbackVerse); }
+                finally { setContentLoading(false); }
             };
 
             const loadStory = async () => {
                 setContentLoading(true);
                 try {
-                    console.log('📖 Cargando relato bíblico...');
                     const res = await api.call('/stories.php?action=personalized', 'GET', null, token);
-
-                    if (res && res.success && res.story) {
-                        console.log('✅ Relato recibido:', res.story);
-                        setCurrentStory(res.story);
-                    } else {
-                        console.warn('⚠️ No se recibió relato válido, usando fallback');
-                        setCurrentStory(fallbackStory);
-                    }
-                } catch (error) {
-                    console.error('❌ Error cargando relato:', error);
-                    setCurrentStory(fallbackStory);
-                } finally {
-                    setContentLoading(false);
-                }
+                    setCurrentStory(res && res.success && res.story ? res.story : fallbackStory);
+                } catch (e) { setCurrentStory(fallbackStory); }
+                finally { setContentLoading(false); }
             };
 
-            const toggleContentType = () => {
-                const newType = contentType === 'verse' ? 'story' : 'verse';
-                setContentType(newType);
-                // Siempre cargar contenido fresco al cambiar de modo
-                if (newType === 'story') {
-                    loadStory();
-                } else {
-                    loadVerse(true);
-                }
+            const setContent = (type) => {
+                if (type === contentType) return;
+                setContentType(type);
+                if (type === 'story') loadStory(); else loadVerse(true);
             };
 
             const handleCheckin = async (emotionId, notes, contentPref = 'verse') => {
                 try {
                     const res = await api.call('/checkin.php?action=create', 'POST', { emotion_id: emotionId, notes }, token);
-
                     if (res.success) {
-                        // 1. Cerrar modal INMEDIATAMENTE
                         setShowCheckin(false);
-
-                        // 2. Establecer el tipo de contenido preferido
                         setContentType(contentPref);
-
-                        // 3. Recargar data y contenido según preferencia
-                        setTimeout(async () => {
-                            await loadData();
-                            if (contentPref === 'story') {
-                                loadStory();
-                            } else {
-                                loadVerse(true); // forzar nuevo versículo
-                            }
-                        }, 200);
+                        setTimeout(async () => { await loadData(); contentPref === 'story' ? loadStory() : loadVerse(true); }, 200);
                     }
-                } catch (error) {
-                    console.error('❌ Error:', error);
-                    setShowCheckin(false);
-                }
+                } catch (e) { setShowCheckin(false); }
             };
-                                    
-            // Mostrar loading mientras carga
-            if (loading) {
-                return (
-                    <div className={`min-h-screen ${dark ? 'dark bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900' : 'bg-gradient-to-br from-purple-100 via-pink-50 to-blue-100'} flex items-center justify-center`}>
-                        <div className="spinner"></div>
-                    </div>
-                );
-            }
-            
+
+            const shell = { minHeight: '100dvh', background: T.bg, color: T.ink, fontFamily: T.sans, transition: 'background .4s, color .4s' };
+            if (loading) return <FullCenter T={T}><Spinner T={T} /></FullCenter>;
+
             return (
-                <div className={`min-h-screen ${dark ? 'dark bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900' : 'bg-gradient-to-br from-purple-100 via-pink-50 to-blue-100'} transition-all duration-500`}>
+                <div style={shell}>
                     <NotificationService token={token} settings={settings} currentVerse={currentVerse} />
                     {showCheckin && emotions.length > 0 && (
-                        <CheckinModal
-                            emotions={emotions}
-                            lang={lang}
-                            dark={dark}
-                            onSubmit={handleCheckin}
-                            onSkip={() => {
-                                setShowCheckin(false);
-                                loadVerse();
-                            }}
-                        />
+                        <CheckinSheet T={T} emotions={emotions} lang={lang} t={t} user={user} onSubmit={handleCheckin}
+                            onSkip={() => { setShowCheckin(false); if (!currentVerse) loadVerse(); }} />
                     )}
-                    
-                    <Header user={user} dark={dark} onLogout={onLogout} settings={settings} token={token} onUpdate={onSettingsUpdate} t={t} />
-                    
-                    <div className="max-w-4xl mx-auto px-4 py-6 pb-24">
-                        {view === 'home' && <HomeView token={token} dark={dark} lang={lang} verse={currentVerse} story={currentStory} contentType={contentType} contentLoading={contentLoading} checkin={todayCheckin} onRefresh={contentType === 'verse' ? loadVerse : loadStory} onToggleContent={toggleContentType} onShowCheckin={() => setShowCheckin(true)} t={t} favoritedVerses={favoritedVerses} onToggleFavorite={toggleFavorite} />}
-                        {view === 'history' && <HistoryView token={token} dark={dark} lang={lang} t={t} />}
-                        {view === 'stats' && <StatsView token={token} dark={dark} lang={lang} t={t} />}
-                        {view === 'favorites' && <FavoritesView token={token} dark={dark} lang={lang} t={t} />}
+                    <div style={{ maxWidth: 560, margin: '0 auto', padding: `max(16px, env(safe-area-inset-top)) 16px ${view === 'settings' ? 32 : 120}px`, boxSizing: 'border-box' }}>
+                        {view === 'home' && <HomeView T={T} lang={lang} t={t} user={user} verse={currentVerse} story={currentStory} contentType={contentType}
+                            contentLoading={contentLoading} checkin={todayCheckin} onRefresh={contentType === 'verse' ? () => loadVerse(true) : loadStory}
+                            onSetContent={setContent} onShowCheckin={() => setShowCheckin(true)} onOpenSettings={() => setView('settings')}
+                            favoritedVerses={favoritedVerses} onToggleFavorite={toggleFavorite} />}
+                        {view === 'history' && <HistoryView T={T} token={token} lang={lang} t={t} />}
+                        {view === 'stats' && <StatsView T={T} token={token} lang={lang} t={t} />}
+                        {view === 'favorites' && <FavoritesView T={T} token={token} lang={lang} t={t} onChange={loadFavorites} />}
+                        {view === 'settings' && <SettingsView T={T} settings={settings} token={token} onUpdate={onSettingsUpdate} onClose={() => setView('home')}
+                            onLogout={onLogout} t={t} themeMode={themeMode} setThemeMode={setThemeMode} />}
                     </div>
-                    
-                    <BottomNav view={view} setView={setView} dark={dark} t={t} />
+                    {view !== 'settings' && <BottomNav T={T} view={view} setView={setView} t={t} />}
                 </div>
             );
         };
-        
-        // Componente Header
-        const Header = ({ user, dark, onLogout, settings, token, onUpdate, t }) => {
-            const [showSettings, setShowSettings] = useState(false);
-            
-            // Validación de seguridad
-            if (!user) {
-                return (
-                    <div className={`${dark ? 'bg-black/30' : 'bg-white/30'} backdrop-blur-md border-b ${dark ? 'border-purple-500/20' : 'border-purple-200'}`}>
-                        <div className="max-w-4xl mx-auto px-4 py-4">
-                            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
-                                <i data-lucide="book-open" className="w-6 h-6 text-white"></i>
-                            </div>
-                        </div>
-                    </div>
-                );
-            }
-            return (
-                <>
-                    <div className={`${dark ? 'bg-black/30' : 'bg-white/30'} backdrop-blur-md border-b ${dark ? 'border-purple-500/20' : 'border-purple-200'}`}>
-                        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
-                                    <i data-lucide="book-open" className="w-6 h-6 text-white"></i>
-                                </div>
-                                <div>
-                                    <h1 className={`text-xl font-bold ${dark ? 'text-white' : 'text-gray-800'}`}>Maná Digital</h1>
-                                    <p className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-600'}`}>{user.name}</p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => setShowSettings(true)}
-                                className={`p-3 rounded-xl ${dark ? 'bg-white/10 text-white' : 'bg-purple-100 text-purple-700'} hover:scale-110 transition-all`}
-                            >
-                                <i data-lucide="settings" className="w-5 h-5"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    {showSettings && (
-                        <SettingsModal
-                            settings={settings}
-                            token={token}
-                            onUpdate={onUpdate}
-                            onClose={() => setShowSettings(false)}
-                            onLogout={onLogout}
-                            dark={dark}
-                            t={t}
-                        />
-                    )}
-                </>
-            );
-        };
-        
-        // Modal de Check-in
-        const CheckinModal = ({ emotions, lang, dark, onSubmit, onSkip }) => {
+
+        // ============ CHECK-IN ============
+        const CheckinSheet = ({ T, emotions, lang, t, user, onSubmit, onSkip }) => {
             const [selected, setSelected] = useState(null);
             const [notes, setNotes] = useState('');
-            const [contentPref, setContentPref] = useState('verse'); // 'verse' o 'story'
+            const [contentPref, setContentPref] = useState('verse');
+            const night = T.name === 'night';
+            const today = new Date().toLocaleDateString(lang, { weekday: 'long', day: 'numeric', month: 'long' });
 
             return (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <div className={`w-full max-w-lg ${dark ? 'bg-gray-800' : 'bg-white'} rounded-3xl p-6 shadow-2xl animate-slide-in max-h-[90vh] overflow-y-auto`}>
-                        <h2 className={`text-2xl font-bold mb-6 ${dark ? 'text-white' : 'text-gray-800'}`}>
-                            {lang === 'es' ? '¿Cómo te sientes hoy?' : 'How are you feeling today?'}
-                        </h2>
+                <div className="anim-fade" style={{ position: 'fixed', inset: 0, zIndex: 50, background: T.overlay, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+                    <div className="anim-up" style={{ width: '100%', maxWidth: 560, maxHeight: '92dvh', overflowY: 'auto', background: T.bg, borderRadius: '32px 32px 0 0', padding: '12px 24px calc(28px + env(safe-area-inset-bottom))', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 20, fontFamily: T.sans, color: T.ink }}>
+                        <div style={{ width: 40, height: 5, borderRadius: 3, background: T.line, alignSelf: 'center' }}></div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase', color: night ? T.accent : T.muted }}>
+                                {night && user ? `${t.hello}, ${user.name.split(' ')[0]}` : today}
+                            </div>
+                            <h2 style={{ margin: 0, fontFamily: T.serif, fontWeight: 400, fontSize: 32 * T.serifSize, lineHeight: 1.08 }}>{t.howFeeling}</h2>
+                        </div>
+                        <div style={night ? { display: 'flex', flexWrap: 'wrap', gap: 10 } : { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 8 }}>
+                            {emotions.map(e => {
+                                const on = selected === e.id;
+                                return (
+                                    <button key={e.id} onClick={() => setSelected(e.id)} aria-pressed={on} style={{
+                                        height: night ? 44 : 48, borderRadius: night ? 22 : 14, padding: night ? '0 16px' : '0 12px',
+                                        display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 500, textAlign: 'left',
+                                        border: `1px solid ${on ? (night ? T.ink : T.accent) : T.line}`,
+                                        background: on ? (night ? T.ink : T.accentSoft) : (night ? 'transparent' : T.surface),
+                                        color: on && night ? T.bg : T.ink, transition: 'all .15s'
+                                    }}>
+                                        <span style={{ width: 10, height: 10, borderRadius: '50%', background: e.color || T.accent, flexShrink: 0 }}></span>
+                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lang === 'es' ? e.name_es : e.name_en}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: T.muted }}>{t.receive}</div>
+                            <Segmented T={T} value={contentPref} onChange={setContentPref} options={[{ value: 'verse', label: t.verse, icon: 'book-open' }, { value: 'story', label: t.story, icon: 'scroll-text' }]} />
+                        </div>
+                        <input value={notes} onChange={e => setNotes(e.target.value)} placeholder={t.notes} style={inputStyle(T)} />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10 }}>
+                            <GhostBtn T={T} onClick={onSkip} style={{ height: 56 }}>{t.skip}</GhostBtn>
+                            <PrimaryBtn T={T} disabled={!selected} onClick={() => selected && onSubmit(selected, notes, contentPref)}>{t.submit}</PrimaryBtn>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
 
-                        <div className="grid grid-cols-3 gap-3 mb-6">
-                            {emotions.map(e => (
-                                <button
-                                    key={e.id}
-                                    onClick={() => setSelected(e.id)}
-                                    className={`p-4 rounded-xl border-2 transition-all ${
-                                        selected === e.id
-                                            ? 'border-purple-500 bg-purple-500/20'
-                                            : dark
-                                            ? 'border-gray-700 bg-gray-700/50'
-                                            : 'border-gray-200 bg-gray-50'
-                                    }`}
-                                >
-                                    <div className="text-4xl mb-2">{e.emoji}</div>
-                                    <div className={`text-sm font-semibold ${dark ? 'text-white' : 'text-gray-800'}`}>
-                                        {lang === 'es' ? e.name_es : e.name_en}
-                                    </div>
+        // ============ INICIO ============
+        const HomeView = ({ T, lang, t, user, verse, story, contentType, contentLoading, checkin, onRefresh, onSetContent, onShowCheckin, onOpenSettings, favoritedVerses, onToggleFavorite }) => {
+            const night = T.name === 'night';
+            const isStory = contentType === 'story';
+            const isFav = verse && favoritedVerses.includes(parseInt(verse.id));
+            const firstName = user && user.name ? user.name.split(' ')[0] : '';
+            const dateLabel = new Date().toLocaleDateString(lang, { weekday: 'long', day: 'numeric', month: 'short' });
+
+            const share = async () => {
+                if (!verse) return;
+                const text = `“${lang === 'es' ? verse.text_es : verse.text_en}” — ${verse.reference}`;
+                try { if (navigator.share) await navigator.share({ text }); else await navigator.clipboard.writeText(text); } catch (e) {}
+            };
+
+            const content = contentLoading ? (
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 280 }}><Spinner T={T} /></div>
+            ) : isStory ? (story ? (
+                <div className="anim-fade" style={{ display: 'flex', flexDirection: 'column', gap: 14, textAlign: 'left' }}>
+                    <Ref T={T}>{night ? `${t.story} · ` : ''}{story.reference}</Ref>
+                    <h2 style={{ margin: 0, fontFamily: T.serif, fontWeight: 400, fontSize: 40 * T.serifSize, lineHeight: 1.02 }}>{lang === 'es' ? story.title_es : story.title_en}</h2>
+                    <p style={{ margin: 0, fontFamily: night ? T.sans : T.serif, fontSize: night ? 17 : 19, lineHeight: night ? 1.65 : 1.55, color: T.ink2, whiteSpace: 'pre-line', textWrap: 'pretty' }}>{lang === 'es' ? story.summary_es : story.summary_en}</p>
+                    {story.moral_es && (
+                        <div style={night ? { marginTop: 8, borderRadius: 24, background: T.surface, border: `1px solid ${T.line}`, padding: 20 } : { marginTop: 8, borderTop: `1px solid ${T.line}`, paddingTop: 18 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: night ? T.accent : T.muted, marginBottom: 6 }}>{night && <Icon n="lightbulb" size={15} />}{t.lesson}</div>
+                            <p style={{ margin: 0, fontFamily: T.serif, fontStyle: night ? 'normal' : 'italic', fontSize: 21 * T.serifSize, lineHeight: 1.35 }}>{lang === 'es' ? story.moral_es : story.moral_en}</p>
+                        </div>
+                    )}
+                </div>
+            ) : <Empty T={T} icon="scroll-text" text={t.noStory} />) : (verse ? (
+                <div className="anim-fade" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: night ? 'center' : 'stretch', textAlign: night ? 'center' : 'left', gap: 28, justifyContent: 'center' }}>
+                    {night && <div style={{ fontSize: 12, letterSpacing: '.16em', textTransform: 'uppercase', color: T.muted }}>{t.todayWord}</div>}
+                    <p style={{ margin: 0, fontFamily: T.serif, fontSize: night ? 'clamp(28px, 8vw, 38px)' : 'clamp(24px, 6.8vw, 30px)', lineHeight: night ? 1.18 : 1.32, textWrap: night ? 'balance' : 'pretty' }}>
+                        “{lang === 'es' ? verse.text_es : verse.text_en}”
+                    </p>
+                    {night ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: T.accent, fontSize: 14, letterSpacing: '.12em', textTransform: 'uppercase' }}>
+                            <span style={{ width: 24, height: 1, background: T.accent }}></span>{verse.reference}<span style={{ width: 24, height: 1, background: T.accent }}></span>
+                        </div>
+                    ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                            <Ref T={T} style={{ fontSize: 14 }}>{verse.reference}</Ref>
+                            <div style={{ display: 'flex', gap: 8 }}>
+                                <IconBtn T={T} n="heart" label="Favorito" active={isFav} onClick={() => onToggleFavorite(parseInt(verse.id))} />
+                                <IconBtn T={T} n="share-2" label="Compartir" onClick={share} />
+                            </div>
+                        </div>
+                    )}
+                </div>
+            ) : <button onClick={onRefresh} style={{ border: 'none', background: 'none', color: 'inherit', width: '100%' }}><Empty T={T} icon="book-open" text={t.noVerse} /></button>);
+
+            return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minHeight: 'calc(100dvh - 160px)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '0 4px' }}>
+                        {night ? (
+                            checkin ? (
+                                <button onClick={onShowCheckin} style={{ height: 40, borderRadius: 20, border: `1px solid ${T.line}`, background: 'transparent', display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px', fontSize: 14, color: T.muted }}>
+                                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: checkin.color || T.accent }}></span>
+                                    {lang === 'es' ? checkin.name_es : checkin.name_en}<Icon n="pencil" size={13} />
                                 </button>
+                            ) : <div style={{ fontFamily: T.serif, fontSize: 26 }}>{t.hello}, {firstName}</div>
+                        ) : (
+                            <div>
+                                <div style={{ fontSize: 13, color: T.muted, textTransform: 'capitalize' }}>{dateLabel}</div>
+                                <div style={{ fontFamily: T.serif, fontSize: 26 }}>{t.hello}, {firstName}</div>
+                            </div>
+                        )}
+                        <IconBtn T={T} n="settings" label={t.settings} onClick={onOpenSettings} />
+                    </div>
+
+                    {!night && checkin && (
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '0 4px' }}>
+                            <button onClick={onShowCheckin} style={{ height: 36, borderRadius: 18, background: T.surface, border: `1px solid ${T.line}`, display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px', fontSize: 13, fontWeight: 600, color: T.ink }}>
+                                <span style={{ width: 8, height: 8, borderRadius: '50%', background: checkin.color || T.accent }}></span>
+                                {lang === 'es' ? checkin.name_es : checkin.name_en}<Icon n="pencil" size={13} style={{ color: T.faint }} />
+                            </button>
+                        </div>
+                    )}
+
+                    <div style={{ padding: night ? '0 4px' : 0 }}>
+                        <Segmented T={T} value={contentType} onChange={onSetContent} options={[{ value: 'verse', label: t.verse }, { value: 'story', label: t.story }]} />
+                    </div>
+
+                    {night ? (
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px 16px 0' }}>{content}</div>
+                    ) : (
+                        <Card T={T} style={{ flex: 1, padding: '32px 26px', display: 'flex', flexDirection: 'column', minHeight: 360 }}>{content}</Card>
+                    )}
+
+                    {night ? (
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: 16, paddingTop: 8 }}>
+                            {!isStory && verse && <button onClick={() => onToggleFavorite(parseInt(verse.id))} aria-label="Favorito" style={{ width: 52, height: 52, borderRadius: '50%', border: `1px solid ${isFav ? T.accent : T.line}`, background: isFav ? T.accentSoft : 'transparent', color: T.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon n="heart" size={20} /></button>}
+                            <button onClick={onRefresh} style={{ height: 52, borderRadius: 26, border: 'none', background: T.ink, color: T.bg, fontSize: 15, fontWeight: 600, padding: '0 24px', display: 'flex', alignItems: 'center', gap: 8 }}><Icon n="refresh-cw" size={17} />{isStory ? t.newStory : t.newVerse}</button>
+                            {!isStory && verse && <button onClick={share} aria-label="Compartir" style={{ width: 52, height: 52, borderRadius: '50%', border: `1px solid ${T.line}`, background: 'transparent', color: T.ink, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon n="share-2" size={20} /></button>}
+                        </div>
+                    ) : (
+                        <GhostBtn T={T} onClick={onRefresh}><Icon n="refresh-cw" size={17} />{isStory ? t.newStory : t.newVerse}</GhostBtn>
+                    )}
+                </div>
+            );
+        };
+
+        // ============ HISTORIAL ============
+        const HistoryView = ({ T, token, lang, t }) => {
+            const [history, setHistory] = useState(null);
+            const night = T.name === 'night';
+            useEffect(() => { api.call('/verses.php?action=history', 'GET', null, token).then(res => setHistory(res.success ? res.history : [])); }, []);
+            const fmt = (d) => new Date(d).toLocaleString(lang, { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+
+            return (
+                <div>
+                    <PageTitle T={T}>{t.history}</PageTitle>
+                    {!history ? <FullCenter T={T}><Spinner T={T} /></FullCenter> : history.length === 0 ? <Empty T={T} icon="history" text={t.noHistory} /> : (
+                        <div style={{ padding: '0 4px' }}>
+                            {history.map((item, i) => night ? (
+                                <div key={item.history_id} style={{ display: 'grid', gridTemplateColumns: '14px 1fr', gap: 16 }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                        <span style={{ width: 10, height: 10, borderRadius: '50%', background: item.emotion_color || T.accent, marginTop: 5, flexShrink: 0 }}></span>
+                                        {i < history.length - 1 && <span style={{ flex: 1, width: 1, background: T.line }}></span>}
+                                    </div>
+                                    <div style={{ paddingBottom: 24, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                        <div style={{ fontSize: 13, color: T.muted }}>{fmt(item.sent_at)}{item.emotion_emoji ? ` · ${item.emotion_emoji}` : ''}</div>
+                                        <p style={{ margin: 0, fontFamily: T.serif, fontSize: 21, lineHeight: 1.25 }}>{lang === 'es' ? item.text_es : item.text_en}</p>
+                                        <Ref T={T}>{item.reference}</Ref>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div key={item.history_id} style={{ padding: '18px 0', borderTop: `1px solid ${T.line}`, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: T.muted }}>
+                                        <span>{item.emotion_emoji}</span><span>{fmt(item.sent_at)}</span>
+                                    </div>
+                                    <p style={{ margin: 0, fontFamily: T.serif, fontSize: 18, lineHeight: 1.4 }}>{lang === 'es' ? item.text_es : item.text_en}</p>
+                                    <Ref T={T}>{item.reference}</Ref>
+                                </div>
                             ))}
                         </div>
-
-                        {/* Selección de tipo de contenido */}
-                        <div className="mb-4">
-                            <p className={`text-sm font-semibold mb-3 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>
-                                {lang === 'es' ? '¿Qué te gustaría recibir hoy?' : 'What would you like to receive today?'}
-                            </p>
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => setContentPref('verse')}
-                                    className={`flex-1 p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 ${
-                                        contentPref === 'verse'
-                                            ? 'border-purple-500 bg-purple-500/20'
-                                            : dark
-                                            ? 'border-gray-700 bg-gray-700/50'
-                                            : 'border-gray-200 bg-gray-50'
-                                    }`}
-                                >
-                                    <i data-lucide="book-open" className={`w-5 h-5 ${contentPref === 'verse' ? 'text-purple-500' : dark ? 'text-gray-400' : 'text-gray-600'}`}></i>
-                                    <span className={`font-semibold ${dark ? 'text-white' : 'text-gray-800'}`}>
-                                        {lang === 'es' ? 'Versículo' : 'Verse'}
-                                    </span>
-                                </button>
-                                <button
-                                    onClick={() => setContentPref('story')}
-                                    className={`flex-1 p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 ${
-                                        contentPref === 'story'
-                                            ? 'border-purple-500 bg-purple-500/20'
-                                            : dark
-                                            ? 'border-gray-700 bg-gray-700/50'
-                                            : 'border-gray-200 bg-gray-50'
-                                    }`}
-                                >
-                                    <i data-lucide="scroll-text" className={`w-5 h-5 ${contentPref === 'story' ? 'text-purple-500' : dark ? 'text-gray-400' : 'text-gray-600'}`}></i>
-                                    <span className={`font-semibold ${dark ? 'text-white' : 'text-gray-800'}`}>
-                                        {lang === 'es' ? 'Relato' : 'Story'}
-                                    </span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <textarea
-                            value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
-                            placeholder={lang === 'es' ? 'Notas opcionales' : 'Optional notes'}
-                            rows="2"
-                            className={`w-full p-3 rounded-xl border ${
-                                dark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
-                            } focus:outline-none focus:ring-2 focus:ring-purple-500 mb-4`}
-                        ></textarea>
-
-                        <div className="flex gap-3">
-                            <button
-                                onClick={onSkip}
-                                className={`flex-1 p-3 rounded-xl ${
-                                    dark ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-800'
-                                } font-semibold hover:opacity-80 transition-all`}
-                            >
-                                {lang === 'es' ? 'Saltar' : 'Skip'}
-                            </button>
-                            <button
-                                onClick={() => selected && onSubmit(selected, notes, contentPref)}
-                                disabled={!selected}
-                                className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white p-3 rounded-xl font-semibold hover:opacity-90 transition-all disabled:opacity-50"
-                            >
-                                {lang === 'es' ? 'Enviar' : 'Submit'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-        
-        // Vista Home
-        const HomeView = ({ token, dark, lang, verse, story, contentType, contentLoading, checkin, onRefresh, onToggleContent, onShowCheckin, t, favoritedVerses, onToggleFavorite }) => {
-            const isFavorited = verse && favoritedVerses.includes(parseInt(verse.id));
-            const isStoryMode = contentType === 'story';
-            const currentContent = isStoryMode ? story : verse;
-
-            return (
-                <div className="space-y-6">
-                    {/* Botón para alternar entre Versículo y Relato */}
-                    <div className={`${dark ? 'bg-white/10' : 'bg-white/70'} backdrop-blur-md border ${dark ? 'border-purple-500/20' : 'border-purple-200'} rounded-2xl p-2 shadow-lg`}>
-                        <div className="flex">
-                            <button
-                                onClick={() => contentType !== 'verse' && onToggleContent()}
-                                className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${
-                                    !isStoryMode
-                                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
-                                        : dark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-800'
-                                }`}
-                            >
-                                <i data-lucide="book-open" className="w-5 h-5"></i>
-                                <span>{lang === 'es' ? 'Versículo' : 'Verse'}</span>
-                            </button>
-                            <button
-                                onClick={() => contentType !== 'story' && onToggleContent()}
-                                className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${
-                                    isStoryMode
-                                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
-                                        : dark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-800'
-                                }`}
-                            >
-                                <i data-lucide="scroll-text" className="w-5 h-5"></i>
-                                <span>{lang === 'es' ? 'Relato' : 'Story'}</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    {checkin && (
-                        <div className={`${dark ? 'bg-white/10' : 'bg-white/70'} backdrop-blur-md border ${dark ? 'border-purple-500/20' : 'border-purple-200'} rounded-3xl p-6 shadow-xl`}>
-                            <div className="flex items-center gap-3">
-                                <div className="text-4xl">{checkin.emoji}</div>
-                                <div>
-                                    <p className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-600'}`}>Hoy te sientes:</p>
-                                    <p className={`text-lg font-semibold ${dark ? 'text-white' : 'text-gray-800'}`}>
-                                        {lang === 'es' ? checkin.name_es : checkin.name_en}
-                                    </p>
-                                </div>
-                                <button
-                                    onClick={onShowCheckin}
-                                    className="ml-auto text-purple-500 hover:scale-110 transition-all"
-                                >
-                                    <i data-lucide="edit-2" className="w-5 h-5"></i>
-                                </button>
-                            </div>
-                            {checkin.notes && (
-                                <p className={`mt-3 text-sm ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{checkin.notes}</p>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Contenido: Versículo o Relato */}
-                    <div
-                        onClick={() => !currentContent && !contentLoading && onRefresh()}
-                        className={`${dark ? 'bg-white/10' : 'bg-white/70'} backdrop-blur-md border ${dark ? 'border-purple-500/20' : 'border-purple-200'} rounded-3xl p-8 shadow-2xl transition-all`}
-                    >
-                        {contentLoading ? (
-                            <div className="flex justify-center py-12">
-                                <div className="spinner"></div>
-                            </div>
-                        ) : isStoryMode ? (
-                            // Vista de Relato Bíblico
-                            story ? (
-                                <div>
-                                    <div className="mb-4">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <i data-lucide="scroll-text" className={`w-5 h-5 ${dark ? 'text-purple-300' : 'text-purple-600'}`}></i>
-                                            <p className={`text-sm font-semibold ${dark ? 'text-purple-300' : 'text-purple-600'}`}>
-                                                {story.reference}
-                                            </p>
-                                        </div>
-                                        <h3 className={`text-xl font-bold ${dark ? 'text-white' : 'text-gray-800'} mb-4`}>
-                                            {lang === 'es' ? story.title_es : story.title_en}
-                                        </h3>
-                                        <p className={`text-base leading-relaxed ${dark ? 'text-gray-200' : 'text-gray-700'} whitespace-pre-line`}>
-                                            {lang === 'es' ? story.summary_es : story.summary_en}
-                                        </p>
-                                        {story.moral_es && (
-                                            <div className={`mt-4 p-4 rounded-xl ${dark ? 'bg-purple-500/20' : 'bg-purple-100'}`}>
-                                                <p className={`text-sm font-semibold ${dark ? 'text-purple-300' : 'text-purple-700'}`}>
-                                                    <i data-lucide="lightbulb" className="w-4 h-4 inline mr-2"></i>
-                                                    {lang === 'es' ? 'Enseñanza:' : 'Lesson:'}
-                                                </p>
-                                                <p className={`text-sm ${dark ? 'text-gray-200' : 'text-gray-700'} mt-1`}>
-                                                    {lang === 'es' ? story.moral_es : story.moral_en}
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onRefresh();
-                                        }}
-                                        className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-2 rounded-xl font-semibold hover:opacity-90 transition-all"
-                                    >
-                                        {lang === 'es' ? 'Nuevo Relato' : 'New Story'}
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="text-center py-8">
-                                    <i data-lucide="scroll-text" className={`w-16 h-16 mx-auto mb-4 ${dark ? 'text-purple-400' : 'text-purple-500'} opacity-50`}></i>
-                                    <p className={`${dark ? 'text-gray-300' : 'text-gray-600'}`}>
-                                        {lang === 'es' ? 'Toca para obtener un relato' : 'Tap to get a story'}
-                                    </p>
-                                </div>
-                            )
-                        ) : (
-                            // Vista de Versículo
-                            verse ? (
-                                <div>
-                                    <div className="flex items-start justify-between mb-4">
-                                        <div className="flex-1">
-                                            <p className={`text-sm font-semibold ${dark ? 'text-purple-300' : 'text-purple-600'} mb-2`}>
-                                                {verse.reference}
-                                            </p>
-                                            <p className={`text-lg leading-relaxed ${dark ? 'text-white' : 'text-gray-800'}`}>
-                                                {lang === 'es' ? verse.text_es : verse.text_en}
-                                            </p>
-                                        </div>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                if (verse) onToggleFavorite(parseInt(verse.id));
-                                            }}
-                                            className={`p-2 rounded-xl transition-all ${
-                                                isFavorited
-                                                    ? 'bg-pink-500 text-white'
-                                                    : dark
-                                                    ? 'bg-white/10 text-white'
-                                                    : 'bg-gray-100 text-gray-600'
-                                            }`}
-                                        >
-                                            <i data-lucide="heart" className={`w-5 h-5 ${isFavorited ? 'fill-current' : ''}`}></i>
-                                        </button>
-                                    </div>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onRefresh();
-                                        }}
-                                        className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-2 rounded-xl font-semibold hover:opacity-90 transition-all"
-                                    >
-                                        {t.newVerse}
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="text-center py-8">
-                                    <i data-lucide="book-open" className={`w-16 h-16 mx-auto mb-4 ${dark ? 'text-purple-400' : 'text-purple-500'} opacity-50`}></i>
-                                    <p className={`${dark ? 'text-gray-300' : 'text-gray-600'}`}>{t.noVerse}</p>
-                                </div>
-                            )
-                        )}
-                    </div>
-                </div>
-            );
-        };
-        
-        // Vista de Historial
-        const HistoryView = ({ token, dark, lang, t }) => {
-            const [history, setHistory] = useState([]);
-            const [loading, setLoading] = useState(true);
-            const [loaded, setLoaded] = useState(false); // ← AGREGAR
-            
-            useEffect(() => {
-                // Solo cargar si no se ha cargado antes
-                if (!loaded) {  // ← AGREGAR esta condición
-                    api.call('/verses.php?action=history', 'GET', null, token).then(res => {
-                        if (res.success) setHistory(res.history);
-                        setLoading(false);
-                        setLoaded(true); // ← AGREGAR
-                    });
-                }
-            }, [loaded]); 
-            
-            if (loading) {
-                return (
-                    <div className="flex justify-center py-12">
-                        <div className="spinner"></div>
-                    </div>
-                );
-            }
-            
-            return (
-                <div className="space-y-4">
-                    {history.length === 0 ? (
-                        <div className={`${dark ? 'bg-white/10' : 'bg-white/70'} backdrop-blur-md border ${dark ? 'border-purple-500/20' : 'border-purple-200'} rounded-3xl p-12 text-center`}>
-                            <i data-lucide="history" className={`w-16 h-16 mx-auto mb-4 ${dark ? 'text-purple-400' : 'text-purple-500'} opacity-50`}></i>
-                            <p className={`${dark ? 'text-gray-300' : 'text-gray-600'}`}>{t.noHistory}</p>
-                        </div>
-                    ) : (
-                        history.map(item => (
-                            <div
-                                key={item.history_id}
-                                className={`${dark ? 'bg-white/10' : 'bg-white/70'} backdrop-blur-md border ${dark ? 'border-purple-500/20' : 'border-purple-200'} rounded-2xl p-6 shadow-lg`}
-                            >
-                                <p className={`text-sm font-semibold ${dark ? 'text-purple-300' : 'text-purple-600'} mb-2`}>
-                                    {item.reference}
-                                </p>
-                                <p className={`text-base ${dark ? 'text-white' : 'text-gray-800'} mb-2`}>
-                                    {lang === 'es' ? item.text_es : item.text_en}
-                                </p>
-                                <div className="flex items-center gap-2 text-xs">
-                                    {item.emotion_emoji && <span>{item.emotion_emoji}</span>}
-                                    <span className={`${dark ? 'text-gray-400' : 'text-gray-500'}`}>
-                                        {new Date(item.sent_at).toLocaleString(lang)}
-                                    </span>
-                                </div>
-                            </div>
-                        ))
                     )}
                 </div>
             );
         };
-        
-        // Vista de Estadísticas
-        const StatsView = ({ token, dark, lang, t }) => {
+
+        // ============ ESTADÍSTICAS ============
+        const StatsView = ({ T, token, lang, t }) => {
             const [stats, setStats] = useState(null);
-            const chartRef = useRef(null);
-            const chartInstance = useRef(null);
-            const [loaded, setLoaded] = useState(false);
-            
-            useEffect(() => {
-                if (!loaded) {
-                    api.call('/checkin.php?action=stats&days=30', 'GET', null, token).then(res => {
-                        if (res.success) {
-                            setStats(res.stats);
-                            setLoaded(true); // ← AGREGAR ESTA LÍNEA
-                        }
-                    });
-                }
-            }, [loaded]);
-            
-            useEffect(() => {
-                if (stats && chartRef.current && !chartInstance.current) {
-                    const ctx = chartRef.current.getContext('2d');
-                    chartInstance.current = new Chart(ctx, {
-                        type: 'bar',
-                        data: {
-                            labels: stats.emotions.map(e => lang === 'es' ? e.name_es : e.name_en),
-                            datasets: [{
-                                label: t.checkinsLast30Days,
-                                data: stats.emotions.map(e => e.count),
-                                backgroundColor: stats.emotions.map(e => e.color || '#8B5CF6')
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            plugins: { legend: { display: false } }
-                        }
-                    });
-                }
-            }, [stats]);
-            
-            if (!stats) {
-                return (
-                    <div className="flex justify-center py-12">
-                        <div className="spinner"></div>
+            const night = T.name === 'night';
+            useEffect(() => { api.call('/checkin.php?action=stats&days=30', 'GET', null, token).then(res => { if (res.success) setStats(res.stats); }); }, []);
+            if (!stats) return <FullCenter T={T}><Spinner T={T} /></FullCenter>;
+            const list = [...(stats.emotions || [])].filter(e => +e.count > 0).sort((a, b) => b.count - a.count);
+            const max = Math.max(1, ...list.map(e => +e.count));
+
+            const Bars = () => list.map(e => (
+                <div key={e.id || e.name_es} style={night ? { display: 'flex', flexDirection: 'column', gap: 6 } : { display: 'grid', gridTemplateColumns: '100px 1fr 28px', alignItems: 'center', gap: 10 }}>
+                    {night ? <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15 }}><span>{lang === 'es' ? e.name_es : e.name_en}</span><span style={{ color: T.muted }}>{e.count}</span></div>
+                           : <span style={{ fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lang === 'es' ? e.name_es : e.name_en}</span>}
+                    <span style={{ height: night ? 4 : 8, borderRadius: 4, background: T.track, display: 'block', overflow: 'hidden' }}>
+                        <span style={{ display: 'block', height: '100%', width: `${(e.count / max) * 100}%`, background: e.color || T.accent, borderRadius: 4, transition: 'width .6s' }}></span>
+                    </span>
+                    {!night && <span style={{ fontSize: 14, fontWeight: 600, textAlign: 'right' }}>{e.count}</span>}
+                </div>
+            ));
+
+            return night ? (
+                <div style={{ padding: '8px 4px' }}>
+                    <div style={{ fontSize: 12, letterSpacing: '.16em', textTransform: 'uppercase', color: T.muted }}>{t.currentStreak}</div>
+                    <div style={{ fontFamily: T.serif, fontSize: 96, lineHeight: 1, color: T.accent }}>{stats.current_streak} <span style={{ fontSize: 32, color: T.ink }}>{t.days}</span></div>
+                    <div style={{ fontSize: 15, color: T.muted, marginTop: 4 }}>{stats.total_checkins} {t.checkins.toLowerCase()} · {t.last30.toLowerCase()}</div>
+                    <div style={{ marginTop: 36, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        <div style={{ fontSize: 12, letterSpacing: '.16em', textTransform: 'uppercase', color: T.muted }}>{t.mostFelt}</div>
+                        <Bars />
                     </div>
-                );
-            }
-            
-            return (
-                <div className="space-y-6">
-                    <div className={`${dark ? 'bg-white/10' : 'bg-white/70'} backdrop-blur-md border ${dark ? 'border-purple-500/20' : 'border-purple-200'} rounded-3xl p-6 shadow-xl`}>
-                        <h3 className={`text-lg font-bold mb-4 ${dark ? 'text-white' : 'text-gray-800'}`}>
-                            {t.emotionalJourney}
-                        </h3>
-                        <div className="grid grid-cols-2 gap-4 mb-6">
-                            <div className={`${dark ? 'bg-white/5' : 'bg-purple-50'} rounded-xl p-4`}>
-                                <p className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-600'}`}>Total Check-ins</p>
-                                <p className={`text-3xl font-bold ${dark ? 'text-white' : 'text-gray-800'}`}>
-                                    {stats.total_checkins}
-                                </p>
-                            </div>
-                            <div className={`${dark ? 'bg-white/5' : 'bg-purple-50'} rounded-xl p-4`}>
-                                <p className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-600'}`}>{t.currentStreak}</p>
-                                <p className={`text-3xl font-bold ${dark ? 'text-white' : 'text-gray-800'}`}>
-                                    {stats.current_streak} {t.days}
-                                </p>
-                            </div>
+                </div>
+            ) : (
+                <div>
+                    <PageTitle T={T}>{t.emotionalJourney}</PageTitle>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                            <Card T={T} style={{ padding: 18 }}><div style={{ fontSize: 13, color: T.muted }}>{t.currentStreak}</div><div style={{ fontFamily: T.serif, fontSize: 44, lineHeight: 1.1 }}>{stats.current_streak}<span style={{ fontSize: 18, color: T.muted }}> {t.days}</span></div></Card>
+                            <Card T={T} style={{ padding: 18 }}><div style={{ fontSize: 13, color: T.muted }}>{t.checkins}</div><div style={{ fontFamily: T.serif, fontSize: 44, lineHeight: 1.1 }}>{stats.total_checkins}</div></Card>
                         </div>
-                        <canvas ref={chartRef} className="w-full h-64"></canvas>
+                        <Card T={T} style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: T.muted }}>{t.mostFelt} · {t.last30.toLowerCase()}</div>
+                            <Bars />
+                        </Card>
                     </div>
                 </div>
             );
         };
-        
-        // Vista de Favoritos
-        const FavoritesView = ({ token, dark, lang, t }) => {
-            const [favorites, setFavorites] = useState([]);
-            const [loading, setLoading] = useState(true);
-            const [loaded, setLoaded] = useState(false); 
-            
-            useEffect(() => {
-                // Solo cargar si no se ha cargado antes
-                if (!loaded) {
-                    loadFavorites();
-                }
-            }, [loaded]); // ← CAMBIAR de [] a [loaded]
-            
-            const loadFavorites = () => {
-                api.call('/favorites.php?action=list', 'GET', null, token).then(res => {
-                    if (res.success) setFavorites(res.favorites);
-                    setLoading(false);
-                    setLoaded(true); // ← AGREGAR ESTA LÍNEA
-                });
-            };
-            
-            const removeFavorite = async (verseId) => {
+
+        // ============ FAVORITOS ============
+        const FavoritesView = ({ T, token, lang, t, onChange }) => {
+            const [favorites, setFavorites] = useState(null);
+            const load = () => api.call('/favorites.php?action=list', 'GET', null, token).then(res => setFavorites(res.success ? res.favorites : []));
+            useEffect(() => { load(); }, []);
+            const remove = async (verseId) => {
                 const res = await api.call(`/favorites.php?action=remove&verse_id=${verseId}`, 'DELETE', null, token);
-                if (res.success) {
-                    setLoaded(false); // ← AGREGAR ESTA LÍNEA
-                    loadFavorites();
-                }
+                if (res.success) { setFavorites(f => f.filter(x => x.verse_id !== verseId)); onChange && onChange(); }
             };
-            
-            if (loading) {
-                return (
-                    <div className="flex justify-center py-12">
-                        <div className="spinner"></div>
-                    </div>
-                );
-            }
-            
             return (
-                <div className="space-y-4">
-                    {favorites.length === 0 ? (
-                        <div className={`${dark ? 'bg-white/10' : 'bg-white/70'} backdrop-blur-md border ${dark ? 'border-purple-500/20' : 'border-purple-200'} rounded-3xl p-12 text-center`}>
-                            <i data-lucide="heart" className={`w-16 h-16 mx-auto mb-4 ${dark ? 'text-purple-400' : 'text-purple-500'} opacity-50`}></i>
-                            <p className={`${dark ? 'text-gray-300' : 'text-gray-600'}`}>{t.noFavorites}</p>
-                        </div>
-                    ) : (
-                        favorites.map(item => (
-                            <div
-                                key={item.favorite_id}
-                                className={`${dark ? 'bg-white/10' : 'bg-white/70'} backdrop-blur-md border ${dark ? 'border-purple-500/20' : 'border-purple-200'} rounded-2xl p-6 shadow-lg`}
-                            >
-                                <div className="flex items-start justify-between">
-                                    <div className="flex-1">
-                                        <p className={`text-sm font-semibold ${dark ? 'text-purple-300' : 'text-purple-600'} mb-2`}>
-                                            {item.reference}
-                                        </p>
-                                        <p className={`text-base ${dark ? 'text-white' : 'text-gray-800'}`}>
-                                            {lang === 'es' ? item.text_es : item.text_en}
-                                        </p>
+                <div>
+                    <PageTitle T={T} right={favorites && favorites.length > 0 && <span style={{ fontSize: 14, color: T.muted }}>{favorites.length} {t.verses}</span>}>{t.favorites}</PageTitle>
+                    {!favorites ? <FullCenter T={T}><Spinner T={T} /></FullCenter> : favorites.length === 0 ? <Empty T={T} icon="heart" text={t.noFavorites} /> : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            {favorites.map(item => (
+                                <Card key={item.favorite_id} T={T} style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                    <p style={{ margin: 0, fontFamily: T.serif, fontSize: 19 * T.serifSize, lineHeight: 1.32 }}>{lang === 'es' ? item.text_es : item.text_en}</p>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <Ref T={T}>{item.reference}</Ref>
+                                        <button onClick={() => remove(item.verse_id)} aria-label="Quitar" style={{ width: 44, height: 44, marginRight: -10, border: 'none', background: 'none', color: T.accentText, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon n="heart-off" size={18} /></button>
                                     </div>
-                                    <button
-                                        onClick={() => removeFavorite(item.verse_id)}
-                                        className="p-2 rounded-xl bg-pink-500 text-white hover:opacity-80 transition-all"
-                                    >
-                                        <i data-lucide="heart" className="w-4 h-4 fill-current"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        ))
+                                </Card>
+                            ))}
+                        </div>
                     )}
                 </div>
             );
         };
-        
-        // Modal de Configuración
-        const SettingsModal = ({ settings, token, onUpdate, onClose, onLogout, dark, t }) => {
-            const [localSettings, setLocalSettings] = useState(settings);
+
+        // ============ AJUSTES (pantalla) ============
+        const SettingsView = ({ T, settings, token, onUpdate, onClose, onLogout, t, themeMode, setThemeMode }) => {
+            const [s, setS] = useState(settings);
             const [saving, setSaving] = useState(false);
             const [schedules, setSchedules] = useState([]);
             const [newSchedule, setNewSchedule] = useState('');
-            const [loadingSchedules, setLoadingSchedules] = useState(true);
-            
-            // Cargar horarios al abrir el modal
-            useEffect(() => {
-                loadSchedules();
-            }, []);
-            
-            const loadSchedules = async () => {
-                try {
-                    const res = await api.call('/settings.php?action=get', 'GET', null, token);
-                    if (res.success && res.schedules) {
-                        setSchedules(res.schedules);
-                    }
-                    setLoadingSchedules(false);
-                } catch (error) {
-                    console.error('Error loading schedules:', error);
-                    setLoadingSchedules(false);
-                }
-            };
-            
-            const addSchedule = async () => {
-                if (!newSchedule) return;
-                
-                try {
-                    const res = await api.call('/settings.php?action=add-schedule', 'POST', { time: newSchedule + ':00' }, token);
-                    if (res.success) {
-                        await loadSchedules();
-                        setNewSchedule('');
-                    }
-                } catch (error) {
-                    console.error('Error adding schedule:', error);
-                }
-            };
-            
-            const removeSchedule = async (scheduleId) => {
-                try {
-                    const res = await api.call(`/settings.php?action=remove-schedule&id=${scheduleId}`, 'DELETE', null, token);
-                    if (res.success) {
-                        await loadSchedules();
-                    }
-                } catch (error) {
-                    console.error('Error removing schedule:', error);
-                }
-            };
-            
+            const set = (patch) => setS(prev => ({ ...prev, ...patch }));
+
+            useEffect(() => { loadSchedules(); }, []);
+            const loadSchedules = async () => { try { const res = await api.call('/settings.php?action=get', 'GET', null, token); if (res.success && res.schedules) setSchedules(res.schedules); } catch (e) {} };
+            const addSchedule = async () => { if (!newSchedule) return; const res = await api.call('/settings.php?action=add-schedule', 'POST', { time: newSchedule + ':00' }, token); if (res.success) { await loadSchedules(); setNewSchedule(''); } };
+            const removeSchedule = async (id) => { const res = await api.call(`/settings.php?action=remove-schedule&id=${id}`, 'DELETE', null, token); if (res.success) loadSchedules(); };
             const handleSave = async () => {
                 setSaving(true);
-                const res = await api.call('/settings.php?action=update', 'PUT', localSettings, token);
-                if (res.success) {
-                    onUpdate(localSettings);
-                    onClose();
-                }
+                const payload = { ...s, dark_mode: themeMode === 'night' };
+                const res = await api.call('/settings.php?action=update', 'PUT', payload, token);
+                if (res.success) { onUpdate(payload); onClose(); }
                 setSaving(false);
             };
-            
+
+            const Section = ({ title, children }) => (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ padding: '12px 8px 0', fontSize: 12, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: T.muted }}>{title}</div>
+                    <Card T={T} style={{ display: 'flex', flexDirection: 'column' }}>{children}</Card>
+                </div>
+            );
+            const Row = ({ label, hint, children, last }) => (
+                <div style={{ minHeight: 60, padding: '12px 16px', boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderBottom: last ? 'none' : `1px solid ${T.line2}` }}>
+                    <div><div style={{ fontSize: 15, fontWeight: 500 }}>{label}</div>{hint && <div style={{ fontSize: 13, color: T.muted, marginTop: 2 }}>{hint}</div>}</div>
+                    {children}
+                </div>
+            );
+            const Block = ({ label, children, last }) => (
+                <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10, borderBottom: last ? 'none' : `1px solid ${T.line2}` }}>
+                    <div style={{ fontSize: 15, fontWeight: 500 }}>{label}</div>{children}
+                </div>
+            );
+            const chip = { height: 38, borderRadius: 19, display: 'flex', alignItems: 'center', gap: 6, padding: '0 6px 0 14px', fontSize: 14, fontWeight: 600, background: T.accentSoft, color: T.accentText, border: T.pill ? `1px solid ${T.accent}` : 'none' };
+            const smallInput = { ...inputStyle(T), height: 44, width: 'auto', flex: 1 };
+
             return (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-                    <div className={`w-full max-w-2xl ${dark ? 'bg-gray-800' : 'bg-white'} rounded-3xl p-6 shadow-2xl animate-slide-in my-8`}>
-                        <div className="flex items-center justify-between mb-6">
-                            <h2 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-gray-800'}`}>{t.settings}</h2>
-                            <button
-                                onClick={onClose}
-                                className={`p-2 rounded-xl ${dark ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-800'} hover:opacity-80 transition-all`}
-                            >
-                                <i data-lucide="x" className="w-5 h-5"></i>
-                            </button>
-                        </div>
-                        
-                        <div className="space-y-6 mb-6 max-h-[60vh] overflow-y-auto">
-                            {/* Apariencia */}
-                            <div>
-                                <h3 className={`text-lg font-semibold mb-3 ${dark ? 'text-white' : 'text-gray-800'}`}>Apariencia</h3>
-                                
-                                <div className={`flex items-center justify-between p-4 rounded-xl ${dark ? 'bg-gray-700' : 'bg-gray-50'} mb-3`}>
-                                    <span className={`font-semibold ${dark ? 'text-white' : 'text-gray-800'}`}>{t.darkMode}</span>
-                                    <button
-                                        onClick={() => setLocalSettings({ ...localSettings, dark_mode: !localSettings.dark_mode })}
-                                        className={`w-14 h-8 rounded-full transition-all ${localSettings.dark_mode ? 'bg-purple-500' : 'bg-gray-300'}`}
-                                    >
-                                        <div className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-all ${localSettings.dark_mode ? 'translate-x-7' : 'translate-x-1'}`}></div>
-                                    </button>
-                                </div>
-                                
-                                <div className={`p-4 rounded-xl ${dark ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                                    <label className={`block font-semibold mb-2 ${dark ? 'text-white' : 'text-gray-800'}`}>{t.language}</label>
-                                    <select
-                                        value={localSettings.language}
-                                        onChange={(e) => setLocalSettings({ ...localSettings, language: e.target.value })}
-                                        className={`w-full p-3 rounded-xl ${dark ? 'bg-gray-600 text-white border-gray-500' : 'bg-white text-gray-800 border-gray-300'} border focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                                    >
-                                        <option value="es">Español</option>
-                                        <option value="en">English</option>
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            {/* Notificaciones */}
-                            <div>
-                                <h3 className={`text-lg font-semibold mb-3 ${dark ? 'text-white' : 'text-gray-800'}`}>
-                                    <i data-lucide="bell" className="w-5 h-5 inline mr-2"></i>
-                                    Notificaciones
-                                </h3>
-                                
-                                {/* Habilitar notificaciones */}
-                                <div className={`flex items-center justify-between p-4 rounded-xl ${dark ? 'bg-gray-700' : 'bg-gray-50'} mb-3`}>
-                                    <div>
-                                        <span className={`font-semibold block ${dark ? 'text-white' : 'text-gray-800'}`}>Habilitar Notificaciones</span>
-                                        <span className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-600'}`}>Recibe versículos y recordatorios</span>
+                <div className="anim-fade" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <button onClick={onClose} aria-label="Volver" style={{ width: 44, height: 44, border: 'none', background: 'none', color: T.ink, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon n="chevron-left" size={24} /></button>
+                        <h2 style={{ margin: 0, fontFamily: T.serif, fontWeight: 400, fontSize: 32 * T.serifSize }}>{t.settings}</h2>
+                    </div>
+
+                    <Section title={t.appearance}>
+                        <Block label={t.theme}>
+                            <Segmented T={T} value={themeMode} onChange={setThemeMode} options={[{ value: 'day', label: t.day, icon: 'sun' }, { value: 'auto', label: t.auto }, { value: 'night', label: t.night, icon: 'moon' }]} />
+                            {themeMode === 'auto' && <div style={{ fontSize: 13, color: T.muted }}>{t.autoHint}</div>}
+                        </Block>
+                        <Row label={t.language} last>
+                            <select value={s.language} onChange={e => set({ language: e.target.value })} style={{ height: 40, borderRadius: 12, border: `1px solid ${T.line}`, background: T.surface, color: T.ink, padding: '0 10px' }}>
+                                <option value="es">Español</option><option value="en">English</option>
+                            </select>
+                        </Row>
+                    </Section>
+
+                    <Section title={t.reminders}>
+                        <Row label={t.notifications} last={!s.notifications_enabled}><Toggle T={T} on={!!s.notifications_enabled} onChange={v => set({ notifications_enabled: v })} /></Row>
+                        {s.notifications_enabled && (<>
+                            <Row label={t.pause}><Toggle T={T} on={!!s.notifications_paused} onChange={v => set({ notifications_paused: v })} /></Row>
+                            <Block label={t.frequency}>
+                                <Segmented T={T} value={s.interval_mode ? 'interval' : 'fixed'} onChange={v => set({ interval_mode: v === 'interval' })} options={[{ value: 'interval', label: t.interval, icon: 'clock' }, { value: 'fixed', label: t.fixed, icon: 'calendar' }]} />
+                                {s.interval_mode ? (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                        <span style={{ fontSize: 14, color: T.muted, flex: 1 }}>{t.everyHours}</span>
+                                        <input type="number" min="1" max="24" value={s.interval_hours || 2} onChange={e => set({ interval_hours: parseInt(e.target.value) })} style={{ ...smallInput, flex: 'none', width: 88, textAlign: 'center' }} />
                                     </div>
-                                    <button
-                                        onClick={() => setLocalSettings({ ...localSettings, notifications_enabled: !localSettings.notifications_enabled })}
-                                        className={`w-14 h-8 rounded-full transition-all ${localSettings.notifications_enabled ? 'bg-purple-500' : 'bg-gray-300'}`}
-                                    >
-                                        <div className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-all ${localSettings.notifications_enabled ? 'translate-x-7' : 'translate-x-1'}`}></div>
-                                    </button>
-                                </div>
-                                
-                                {localSettings.notifications_enabled && (
-                                    <>
-                                        {/* Pausar notificaciones */}
-                                        <div className={`flex items-center justify-between p-4 rounded-xl ${dark ? 'bg-gray-700' : 'bg-gray-50'} mb-3`}>
-                                            <div>
-                                                <span className={`font-semibold block ${dark ? 'text-white' : 'text-gray-800'}`}>Pausar Notificaciones</span>
-                                                <span className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-600'}`}>Temporalmente</span>
-                                            </div>
-                                            <button
-                                                onClick={() => setLocalSettings({ ...localSettings, notifications_paused: !localSettings.notifications_paused })}
-                                                className={`w-14 h-8 rounded-full transition-all ${localSettings.notifications_paused ? 'bg-orange-500' : 'bg-gray-300'}`}
-                                            >
-                                                <div className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-all ${localSettings.notifications_paused ? 'translate-x-7' : 'translate-x-1'}`}></div>
-                                            </button>
-                                        </div>
-                                        
-                                        {/* Modo de notificaciones */}
-                                        <div className={`p-4 rounded-xl ${dark ? 'bg-gray-700' : 'bg-gray-50'} mb-3`}>
-                                            <label className={`block font-semibold mb-3 ${dark ? 'text-white' : 'text-gray-800'}`}>Modo de Notificaciones</label>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => setLocalSettings({ ...localSettings, interval_mode: true })}
-                                                    className={`flex-1 p-3 rounded-xl font-semibold transition-all ${
-                                                        localSettings.interval_mode
-                                                            ? 'bg-purple-500 text-white'
-                                                            : dark ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-700'
-                                                    }`}
-                                                >
-                                                    <i data-lucide="clock" className="w-4 h-4 inline mr-1"></i>
-                                                    Intervalo
-                                                </button>
-                                                <button
-                                                    onClick={() => setLocalSettings({ ...localSettings, interval_mode: false })}
-                                                    className={`flex-1 p-3 rounded-xl font-semibold transition-all ${
-                                                        !localSettings.interval_mode
-                                                            ? 'bg-purple-500 text-white'
-                                                            : dark ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-700'
-                                                    }`}
-                                                >
-                                                    <i data-lucide="calendar" className="w-4 h-4 inline mr-1"></i>
-                                                    Horarios
-                                                </button>
-                                            </div>
-                                        </div>
-                                        
-                                        {/* Intervalo */}
-                                        {localSettings.interval_mode && (
-                                            <div className={`p-4 rounded-xl ${dark ? 'bg-gray-700' : 'bg-gray-50'} mb-3`}>
-                                                <label className={`block font-semibold mb-2 ${dark ? 'text-white' : 'text-gray-800'}`}>
-                                                    Cada cuántas horas
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    min="1"
-                                                    max="24"
-                                                    value={localSettings.interval_hours || 2}
-                                                    onChange={(e) => setLocalSettings({ ...localSettings, interval_hours: parseInt(e.target.value) })}
-                                                    className={`w-full p-3 rounded-xl ${dark ? 'bg-gray-600 text-white border-gray-500' : 'bg-white text-gray-800 border-gray-300'} border focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                                                />
-                                            </div>
-                                        )}
-                                        
-                                        {/* Horarios personalizados */}
-                                        {!localSettings.interval_mode && (
-                                            <div className={`p-4 rounded-xl ${dark ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                                                <label className={`block font-semibold mb-2 ${dark ? 'text-white' : 'text-gray-800'}`}>
-                                                    Horarios Personalizados
-                                                </label>
-                                                
-                                                <div className="flex gap-2 mb-3">
-                                                    <input
-                                                        type="time"
-                                                        value={newSchedule}
-                                                        onChange={(e) => setNewSchedule(e.target.value)}
-                                                        className={`flex-1 p-3 rounded-xl ${dark ? 'bg-gray-600 text-white border-gray-500' : 'bg-white text-gray-800 border-gray-300'} border focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                                                    />
-                                                    <button
-                                                        onClick={addSchedule}
-                                                        disabled={!newSchedule}
-                                                        className="bg-purple-500 text-white px-4 rounded-xl hover:opacity-90 transition-all disabled:opacity-50"
-                                                    >
-                                                        <i data-lucide="plus" className="w-5 h-5"></i>
-                                                    </button>
-                                                </div>
-                                                
-                                                <div className="space-y-2 max-h-32 overflow-y-auto">
-                                                    {loadingSchedules ? (
-                                                        <p className={`text-sm text-center ${dark ? 'text-gray-400' : 'text-gray-600'}`}>Cargando...</p>
-                                                    ) : schedules.length === 0 ? (
-                                                        <p className={`text-sm text-center ${dark ? 'text-gray-400' : 'text-gray-600'}`}>No hay horarios configurados</p>
-                                                    ) : (
-                                                        schedules.map((schedule) => (
-                                                            <div key={schedule.id} className={`flex items-center justify-between p-3 rounded-xl ${dark ? 'bg-gray-600' : 'bg-white'}`}>
-                                                                <span className={`${dark ? 'text-white' : 'text-gray-800'}`}>
-                                                                    {schedule.time.substring(0, 5)}
-                                                                </span>
-                                                                <button
-                                                                    onClick={() => removeSchedule(schedule.id)}
-                                                                    className="text-red-500 hover:scale-110 transition-all"
-                                                                >
-                                                                    <i data-lucide="trash-2" className="w-4 h-4"></i>
-                                                                </button>
-                                                            </div>
-                                                        ))
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
-                                        
-                                        {/* Check-in diario */}
-                                        <div className={`flex items-center justify-between p-4 rounded-xl ${dark ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                                            <div>
-                                                <span className={`font-semibold block ${dark ? 'text-white' : 'text-gray-800'}`}>Recordatorio de Check-in</span>
-                                                <span className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-600'}`}>Notificación diaria</span>
-                                            </div>
-                                            <button
-                                                onClick={() => setLocalSettings({ ...localSettings, checkin_notification: !localSettings.checkin_notification })}
-                                                className={`w-14 h-8 rounded-full transition-all ${localSettings.checkin_notification ? 'bg-purple-500' : 'bg-gray-300'}`}
-                                            >
-                                                <div className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-all ${localSettings.checkin_notification ? 'translate-x-7' : 'translate-x-1'}`}></div>
-                                            </button>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                        
-                        <div className="flex gap-3">
-                            <button
-                                onClick={onLogout}
-                                className={`flex-1 p-3 rounded-xl ${dark ? 'bg-red-600 hover:bg-red-700' : 'bg-red-500 hover:bg-red-600'} text-white font-semibold transition-all`}
-                            >
-                                {t.logout}
-                            </button>
-                            <button
-                                onClick={handleSave}
-                                disabled={saving}
-                                className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white p-3 rounded-xl font-semibold hover:opacity-90 transition-all disabled:opacity-50"
-                            >
-                                {saving ? t.loading : t.save}
-                            </button>
-                        </div>
+                                ) : (<>
+                                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                        {schedules.length === 0 && <span style={{ fontSize: 14, color: T.muted }}>{t.noSchedules}</span>}
+                                        {schedules.map(sc => (
+                                            <span key={sc.id} style={chip}>{sc.time.substring(0, 5)}
+                                                <button onClick={() => removeSchedule(sc.id)} aria-label="Eliminar" style={{ width: 28, height: 28, border: 'none', background: 'none', color: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon n="x" size={14} /></button>
+                                            </span>
+                                        ))}
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 8 }}>
+                                        <input type="time" value={newSchedule} onChange={e => setNewSchedule(e.target.value)} style={smallInput} />
+                                        <button onClick={addSchedule} disabled={!newSchedule} style={{ height: 44, borderRadius: T.pill ? 22 : 12, border: 'none', padding: '0 16px', background: T.accent, color: T.accentInk, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, opacity: newSchedule ? 1 : .45 }}><Icon n="plus" size={16} />{t.add}</button>
+                                    </div>
+                                </>)}
+                            </Block>
+                            <Row label={t.dailyCheckin} hint={(s.checkin_time || '09:00').substring(0, 5)} last><Toggle T={T} on={!!s.checkin_notification} onChange={v => set({ checkin_notification: v })} /></Row>
+                        </>)}
+                    </Section>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 16 }}>
+                        <PrimaryBtn T={T} onClick={handleSave} disabled={saving}>{saving ? t.loading : t.save}</PrimaryBtn>
+                        <GhostBtn T={T} onClick={onLogout} style={{ color: T.danger }}>{t.logout}</GhostBtn>
                     </div>
                 </div>
             );
@@ -1636,47 +974,40 @@
 
                 return null; // Este componente no renderiza nada
             };
-        
-        // Navegación Inferior
-        const BottomNav = ({ view, setView, dark, t }) => {
+
+        // ============ NAVEGACIÓN ============
+        const BottomNav = ({ T, view, setView, t }) => {
             const items = [
-                { id: 'home', icon: 'home', label: t.home },
+                { id: 'home', icon: 'house', label: t.home },
                 { id: 'history', icon: 'history', label: t.history },
-                { id: 'stats', icon: 'bar-chart-2', label: t.stats },
+                { id: 'stats', icon: 'chart-no-axes-column', label: t.stats },
                 { id: 'favorites', icon: 'heart', label: t.favorites }
             ];
-            
-            return (
-                <div className={`fixed bottom-0 left-0 right-0 ${dark ? 'bg-black/30' : 'bg-white/30'} backdrop-blur-md border-t ${dark ? 'border-purple-500/20' : 'border-purple-200'}`}>
-                    <div className="max-w-4xl mx-auto px-4 py-3">
-                        <div className="flex justify-around">
-                            {items.map(item => (
-                                <button
-                                    key={item.id}
-                                    onClick={() => setView(item.id)}
-                                    className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-all ${
-                                        view === item.id
-                                            ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
-                                            : dark
-                                            ? 'text-gray-400 hover:text-white'
-                                            : 'text-gray-600 hover:text-gray-800'
-                                    }`}
-                                >
-                                    <i data-lucide={item.icon} className="w-6 h-6"></i>
-                                    <span className="text-xs font-semibold">{item.label}</span>
-                                </button>
-                            ))}
+            if (T.pill) {
+                return (
+                    <nav style={{ position: 'fixed', left: 0, right: 0, bottom: 'calc(16px + env(safe-area-inset-bottom))', display: 'flex', justifyContent: 'center', padding: '0 20px', zIndex: 40 }}>
+                        <div style={{ width: '100%', maxWidth: 420, height: 64, borderRadius: 32, background: T.surface, border: `1px solid ${T.line}`, display: 'grid', gridTemplateColumns: `repeat(${items.length},1fr)`, alignItems: 'center', padding: '0 6px', boxSizing: 'border-box', boxShadow: '0 12px 30px rgba(0,0,0,.35)' }}>
+                            {items.map(it => {
+                                const on = view === it.id;
+                                return <button key={it.id} onClick={() => setView(it.id)} aria-label={it.label} aria-current={on ? 'page' : undefined} style={{ height: 52, borderRadius: 26, border: 'none', background: on ? T.line : 'transparent', color: on ? T.accent : T.muted, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 13, fontWeight: 500 }}><Icon n={it.icon} size={21} />{on && <span>{it.label}</span>}</button>;
+                            })}
                         </div>
+                    </nav>
+                );
+            }
+            return (
+                <nav style={{ position: 'fixed', left: 0, right: 0, bottom: 0, background: T.surface, borderTop: `1px solid ${T.line2}`, paddingBottom: 'env(safe-area-inset-bottom)', zIndex: 40 }}>
+                    <div style={{ maxWidth: 560, margin: '0 auto', display: 'grid', gridTemplateColumns: `repeat(${items.length},1fr)` }}>
+                        {items.map(it => {
+                            const on = view === it.id;
+                            return <button key={it.id} onClick={() => setView(it.id)} aria-current={on ? 'page' : undefined} style={{ height: 68, border: 'none', background: 'none', color: on ? T.accent : T.faint, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, fontSize: 11, fontWeight: on ? 700 : 600 }}><Icon n={it.icon} size={22} />{it.label}</button>;
+                        })}
                     </div>
-                </div>
+                </nav>
             );
         };
-        
-        // Renderizar la aplicación
-        ReactDOM.render(React.createElement(App), document.getElementById('root'));
-        
-        // Inicializar iconos de Lucide
-        setTimeout(() => lucide.createIcons(), 100);
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     </script>
 </body>
 </html>
