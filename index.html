@@ -51,6 +51,8 @@
             }
         };
 
+        // Safari/iOS fuera de la PWA instalada no define Notification
+        const HAS_NOTIFICATIONS = typeof Notification !== 'undefined';
         const NOTIFICATION_VERSE_KEY = 'pending_notification_verse';
         const THEME_MODE_KEY = 'mana_theme_mode'; // 'auto' | 'day' | 'night'
 
@@ -262,8 +264,10 @@
 
             const handleSubmit = async (e) => {
                 e.preventDefault(); setError(''); setLoading(true);
-                const res = await onAuth(isLogin, isLogin ? { email, password } : { name, email, password });
-                if (!res.success) setError(res.error || 'Error');
+                try {
+                    const res = await onAuth(isLogin, isLogin ? { email, password } : { name, email, password });
+                    if (!res.success) setError(res.error || 'Error');
+                } catch (err) { setError('No se pudo conectar con el servidor'); }
                 setLoading(false);
             };
 
@@ -789,7 +793,7 @@
 
         // Servicio de Notificaciones
             const NotificationService = ({ token, settings, currentVerse }) => {
-                const [permission, setPermission] = useState(Notification.permission);
+                const [permission, setPermission] = useState(HAS_NOTIFICATIONS ? Notification.permission : 'unsupported');
                 const [lastNotification, setLastNotification] = useState(null);
                 const lastNotifiedTimeRef = useRef(null); // Para evitar notificaciones duplicadas
 
@@ -813,7 +817,7 @@
                             }
                         });
                         console.log('✅ Notificación enviada via SW (' + source + ')');
-                    } else {
+                    } else if (HAS_NOTIFICATIONS) {
                         // Fallback: usar Web Notification API directamente
                         const notification = new Notification('Recordatorio de Oración', {
                             body: `${verse.reference}\n\n${text.substring(0, 100)}...`,
@@ -838,7 +842,7 @@
 
                 // Solicitar permisos
                 useEffect(() => {
-                    if (settings.notifications_enabled && permission === 'default') {
+                    if (HAS_NOTIFICATIONS && settings.notifications_enabled && permission === 'default') {
                         Notification.requestPermission().then(perm => {
                             setPermission(perm);
                             console.log('🔔 Permiso de notificaciones:', perm);
