@@ -3,14 +3,21 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build:www": "rm -rf www && mkdir www && cp index.html manifest.json sw.js icon-192.png icon-512.png apple-touch-icon.png www/ && cp -R images www/images",
-    "cap:sync": "npm run build:www && npx cap sync android"
+    "dev": "vite",
+    "build": "rm -rf assets && vite build",
+    "build:app": "vite build --mode app",
+    "cap:sync": "npm run build:app && npx cap sync android"
   },
   "dependencies": {
     "@capacitor/android": "^8.6.0",
-    "@capacitor/core": "^8.6.0"
+    "@capacitor/core": "^8.6.0",
+    "lucide-static": "^0.460.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@capacitor/cli": "^7.6.10"
+    "@capacitor/cli": "^7.6.10",
+    "@vitejs/plugin-react": "^6.2.1",
+    "vite": "^8.3.5"
   }
 }

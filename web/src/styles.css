@@ -1,0 +1,9 @@
+    html, body { margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+    body { transition: background-color .4s ease; }
+    button { font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    input, textarea, select { font: inherit; }
+    @keyframes slideUp { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .anim-up { animation: slideUp .35s cubic-bezier(.2,.8,.2,1); }
+    .anim-fade { animation: fadeIn .4s ease; }
