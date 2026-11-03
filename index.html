@@ -39,7 +39,7 @@
         /** @jsxRuntime classic */
         const { useState, useEffect, useRef } = React;
 
-        const API_BASE = '/api';
+        const API_BASE = (window.Capacitor && window.Capacitor.isNativePlatform()) ? 'https://manadigital.harlec.com.pe/api' : '/api';
         const api = {
             call: async (endpoint, method = 'GET', body = null, token = null) => {
                 const headers = { 'Content-Type': 'application/json' };

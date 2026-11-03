@@ -1,0 +1,5 @@
+# Bloquear archivos de desarrollo/empaquetado que no deben ser públicos
+RedirectMatch 404 ^/(android|docs|node_modules|www|\.git|\.claude)(/|$)
+<FilesMatch "(^package(-lock)?\.json$|^capacitor\.config\.json$|\.sql$|^config\.php$|^test\.php$|^index_2\.html$|\.md$)">
+    Require all denied
+</FilesMatch>

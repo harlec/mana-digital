@@ -1,0 +1,6 @@
+{
+  "appId": "pe.com.harlec.manadigital",
+  "appName": "Maná Digital",
+  "webDir": "www",
+  "android": { "allowMixedContent": false }
+}

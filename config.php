@@ -47,7 +47,11 @@ function getDBConnection() {
 
 // Configurar headers CORS
 function setCORSHeaders() {
-    header('Access-Control-Allow-Origin: ' . ALLOWED_ORIGIN);
+    // Web/PWA y la app Android (Capacitor usa https://localhost)
+    $allowedOrigins = [ALLOWED_ORIGIN, 'https://localhost'];
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    header('Access-Control-Allow-Origin: ' . (in_array($origin, $allowedOrigins, true) ? $origin : ALLOWED_ORIGIN));
+    header('Vary: Origin');
     header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
     header('Access-Control-Allow-Headers: Content-Type, Authorization');
     header('Access-Control-Allow-Credentials: true');

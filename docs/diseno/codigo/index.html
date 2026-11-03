@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F0E8">
+    <meta name="description" content="Recordatorios de oración personalizados basados en tus emociones">
+    <title>Maná Digital</title>
+
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Manrope:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/lucide-static@0.460.0/font/lucide.css">
+
+    <style>
+        html, body { margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+        body { transition: background-color .4s ease; }
+        button { font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        input, textarea, select { font: inherit; }
+        @keyframes slideUp { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .anim-up { animation: slideUp .35s cubic-bezier(.2,.8,.2,1); }
+        .anim-fade { animation: fadeIn .4s ease; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        /** @jsxRuntime classic */
+        const { useState, useEffect, useRef } = React;
+
+        const API_BASE = '/api';
+        const api = {
+            call: async (endpoint, method = 'GET', body = null, token = null) => {
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) headers['Authorization'] = `Bearer ${token}`;
+                const options = { method, headers };
+                if (body && method !== 'GET') options.body = JSON.stringify(body);
+                const response = await fetch(`${API_BASE}${endpoint}`, options);
+                return response.json();
+            }
+        };
+
+        const NOTIFICATION_VERSE_KEY = 'pending_notification_verse';
+        const THEME_MODE_KEY = 'mana_theme_mode'; // 'auto' | 'day' | 'night'
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(err => console.error('SW error:', err));
+        }
+
+        // ============ TEMAS: Día (Pergamino) / Noche (Nocturno) ============
+        const THEMES = {
+            day: {
+                name: 'day', bg: '#F5F0E8', surface: '#FFFDF9', line: '#E6DED2', line2: '#F1EBE1',
+                ink: '#26211C', ink2: '#3D362F', muted: '#6E655B', faint: '#9C9285',
+                accent: '#6B3FBF', accentInk: '#FFFFFF', accentSoft: '#EEE7F8', accentText: '#5A33A8',
+                track: '#EAE3D8', danger: '#B42318', overlay: 'rgba(38,33,28,.55)',
+                serif: "'Newsreader', Georgia, serif", sans: "'Manrope', system-ui, sans-serif",
+                serifSize: 1, radius: 16, pill: false
+            },
+            night: {
+                name: 'night', bg: '#13111C', surface: '#1D1A29', line: '#2C2840', line2: '#2C2840',
+                ink: '#F3EFE6', ink2: '#CFCADB', muted: '#A39DB5', faint: '#7C7691',
+                accent: '#E8C478', accentInk: '#13111C', accentSoft: 'rgba(232,196,120,.10)', accentText: '#E8C478',
+                track: '#2C2840', danger: '#F0A7A0', overlay: 'rgba(0,0,0,.6)',
+                serif: "'Instrument Serif', Georgia, serif", sans: "'DM Sans', system-ui, sans-serif",
+                serifSize: 1.18, radius: 28, pill: true
+            }
+        };
+        const isNightHour = () => { const h = new Date().getHours(); return h >= 19 || h < 6; };
+        const resolveTheme = (mode) => THEMES[mode === 'night' || (mode === 'auto' && isNightHour()) ? 'night' : 'day'];
+
+        const applyChrome = (T) => {
+            document.body.style.background = T.bg;
+            const meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', T.bg);
+        };
+
+        const translations = {
+            es: {
+                login: 'Iniciar sesión', register: 'Crear cuenta', name: 'Nombre', email: 'Email', password: 'Contraseña',
+                noAccount: '¿No tienes cuenta?', noAccountCta: 'Regístrate', hasAccount: '¿Ya tienes cuenta?', hasAccountCta: 'Inicia sesión',
+                tagline: 'Una palabra para cada día, según cómo te sientes.',
+                home: 'Inicio', history: 'Historial', stats: 'Camino', favorites: 'Favoritos', settings: 'Ajustes', logout: 'Cerrar sesión',
+                howFeeling: '¿Cómo te sientes hoy?', skip: 'Saltar', submit: 'Recibir mi palabra', notes: 'Añade una nota (opcional)',
+                receive: '¿Qué quieres recibir?', verse: 'Versículo', story: 'Relato',
+                newVerse: 'Otro versículo', newStory: 'Otro relato', noVerse: 'Toca para recibir un versículo', noStory: 'Toca para recibir un relato',
+                lesson: 'Enseñanza', todayWord: 'Tu palabra de hoy', hello: 'Hola',
+                noHistory: 'Aquí aparecerán los versículos que recibas.', noFavorites: 'Guarda un versículo con el corazón y lo encontrarás aquí.',
+                appearance: 'Apariencia', theme: 'Tema', day: 'Día', night: 'Noche', auto: 'Auto', autoHint: 'Noche de 19:00 a 6:00',
+                language: 'Idioma', save: 'Guardar', reminders: 'Recordatorios', notifications: 'Notificaciones', pause: 'Pausar por ahora',
+                frequency: 'Frecuencia', interval: 'Cada X horas', fixed: 'Horarios fijos', everyHours: 'Cada cuántas horas',
+                add: 'Añadir', noSchedules: 'Sin horarios aún', dailyCheckin: 'Recordatorio de check-in',
+                emotionalJourney: 'Tu camino', last30: 'Últimos 30 días', currentStreak: 'Racha actual', checkins: 'Check-ins',
+                mostFelt: 'Lo que más sentiste', days: 'días', loading: 'Cargando…', verses: 'versículos'
+            },
+            en: {
+                login: 'Log in', register: 'Create account', name: 'Name', email: 'Email', password: 'Password',
+                noAccount: "Don't have an account?", noAccountCta: 'Sign up', hasAccount: 'Already have an account?', hasAccountCta: 'Log in',
+                tagline: 'A word for every day, based on how you feel.',
+                home: 'Home', history: 'History', stats: 'Journey', favorites: 'Favorites', settings: 'Settings', logout: 'Log out',
+                howFeeling: 'How are you feeling today?', skip: 'Skip', submit: 'Get my word', notes: 'Add a note (optional)',
+                receive: 'What would you like to receive?', verse: 'Verse', story: 'Story',
+                newVerse: 'Another verse', newStory: 'Another story', noVerse: 'Tap to get a verse', noStory: 'Tap to get a story',
+                lesson: 'Lesson', todayWord: 'Your word today', hello: 'Hi',
+                noHistory: 'Verses you receive will appear here.', noFavorites: 'Save a verse with the heart and find it here.',
+                appearance: 'Appearance', theme: 'Theme', day: 'Day', night: 'Night', auto: 'Auto', autoHint: 'Night from 7pm to 6am',
+                language: 'Language', save: 'Save', reminders: 'Reminders', notifications: 'Notifications', pause: 'Pause for now',
+                frequency: 'Frequency', interval: 'Every X hours', fixed: 'Fixed times', everyHours: 'Every how many hours',
+                add: 'Add', noSchedules: 'No times yet', dailyCheckin: 'Check-in reminder',
+                emotionalJourney: 'Your journey', last30: 'Last 30 days', currentStreak: 'Current streak', checkins: 'Check-ins',
+                mostFelt: 'What you felt most', days: 'days', loading: 'Loading…', verses: 'verses'
+            }
+        };
+
+        // ============ PRIMITIVAS ============
+        const Icon = ({ n, size = 20, style }) => <i className={`icon-${n}`} style={{ fontSize: size, lineHeight: 1, display: 'inline-flex', ...style }}></i>;
+
+        const Spinner = ({ T }) => (
+            <div style={{ width: 32, height: 32, borderRadius: '50%', border: `2px solid ${T.line}`, borderTopColor: T.accent, animation: 'spin 1s linear infinite' }}></div>
+        );
+
+        const FullCenter = ({ T, children }) => (
+            <div style={{ minHeight: '100dvh', background: T.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{children}</div>
+        );
+
+        const Segmented = ({ T, options, value, onChange }) => (
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${options.length}, minmax(0,1fr))`, background: T.track, borderRadius: T.pill ? 999 : 14, padding: 4 }}>
+                {options.map(o => {
+                    const on = o.value === value;
+                    return (
+                        <button key={o.value} onClick={() => onChange(o.value)} style={{
+                            height: 40, border: 'none', borderRadius: T.pill ? 999 : 11, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                            background: on ? (T.pill ? T.ink : T.surface) : 'transparent', color: on ? (T.pill ? T.bg : T.ink) : T.muted,
+                            fontSize: 14, fontWeight: on ? 600 : 500, boxShadow: on && !T.pill ? '0 1px 2px rgba(0,0,0,.08)' : 'none', transition: 'all .2s'
+                        }}>{o.icon && <Icon n={o.icon} size={16} />}{o.label}</button>
+                    );
+                })}
+            </div>
+        );
+
+        const Toggle = ({ T, on, onChange }) => (
+            <button onClick={() => onChange(!on)} aria-pressed={on} style={{
+                width: 52, height: 32, borderRadius: 16, border: 'none', padding: 3, flexShrink: 0, display: 'flex',
+                justifyContent: on ? 'flex-end' : 'flex-start', background: on ? T.accent : T.track, transition: 'background .2s'
+            }}>
+                <span style={{ width: 26, height: 26, borderRadius: '50%', background: T.pill && on ? T.bg : '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.2)' }}></span>
+            </button>
+        );
+
+        const PrimaryBtn = ({ T, children, style, ...p }) => (
+            <button {...p} style={{ height: 56, border: 'none', borderRadius: T.pill ? 28 : 16, background: T.accent, color: T.accentInk, fontSize: 16, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: p.disabled ? .45 : 1, ...style }}>{children}</button>
+        );
+        const GhostBtn = ({ T, children, style, ...p }) => (
+            <button {...p} style={{ height: 52, borderRadius: T.pill ? 26 : 16, border: `1px solid ${T.line}`, background: 'transparent', color: T.ink, fontSize: 15, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, ...style }}>{children}</button>
+        );
+        const IconBtn = ({ T, n, onClick, active, label }) => (
+            <button onClick={onClick} aria-label={label} style={{
+                width: 44, height: 44, borderRadius: '50%', border: active ? 'none' : `1px solid ${T.line}`, flexShrink: 0,
+                background: active ? T.accentSoft : (T.pill ? 'transparent' : T.surface), color: active ? T.accentText : T.ink,
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}><Icon n={n} size={19} /></button>
+        );
+
+        const Card = ({ T, children, style }) => (
+            <div style={{ background: T.surface, border: `1px solid ${T.line2}`, borderRadius: T.pill ? 24 : 22, ...style }}>{children}</div>
+        );
+        const Ref = ({ T, children, style }) => (
+            <div style={{ fontSize: 12, fontWeight: T.pill ? 500 : 700, letterSpacing: T.pill ? '.14em' : '.06em', textTransform: 'uppercase', color: T.accentText, ...style }}>{children}</div>
+        );
+        const PageTitle = ({ T, children, right }) => (
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, padding: '8px 4px 16px' }}>
+                <h2 style={{ margin: 0, fontFamily: T.serif, fontWeight: 400, fontSize: 36 * T.serifSize, lineHeight: 1.05, color: T.ink }}>{children}</h2>
+                {right}
+            </div>
+        );
+        const Empty = ({ T, icon, text }) => (
+            <div style={{ padding: '64px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, color: T.muted }}>
+                <Icon n={icon} size={32} style={{ color: T.faint }} />
+                <p style={{ margin: 0, maxWidth: 260, lineHeight: 1.5, fontSize: 15 }}>{text}</p>
+            </div>
+        );
+        const inputStyle = (T) => ({
+            height: 54, borderRadius: T.pill ? 27 : 14, border: `1px solid ${T.line}`, background: T.surface, color: T.ink,
+            padding: '0 18px', fontSize: 16, outline: 'none', width: '100%', boxSizing: 'border-box'
+        });
+
+        // ============ APP ============
+        const App = () => {
+            const [token, setToken] = useState(localStorage.getItem('prayer_token'));
+            const [user, setUser] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [settings, setSettings] = useState({ language: 'es', dark_mode: false });
+            const [view, setView] = useState('home');
+            const [themeMode, setThemeModeState] = useState(localStorage.getItem(THEME_MODE_KEY) || 'auto');
+            const [, tick] = useState(0);
+
+            // Re-evaluar el tema cada minuto (modo Auto)
+            useEffect(() => { const i = setInterval(() => tick(x => x + 1), 60000); return () => clearInterval(i); }, []);
+
+            const setThemeMode = (m) => { localStorage.setItem(THEME_MODE_KEY, m); setThemeModeState(m); };
+            const T = resolveTheme(themeMode);
+            useEffect(() => applyChrome(T), [T.name]);
+
+            useEffect(() => {
+                if (token) {
+                    api.call('/auth.php?action=verify', 'GET', null, token)
+                        .then(res => {
+                            if (res.success && res.user) { setUser(res.user); loadSettings(); }
+                            else { localStorage.removeItem('prayer_token'); setToken(null); setUser(null); }
+                            setLoading(false);
+                        })
+                        .catch(() => { localStorage.removeItem('prayer_token'); setToken(null); setUser(null); setLoading(false); });
+                } else setLoading(false);
+            }, [token]);
+
+            const loadSettings = async () => {
+                const res = await api.call('/settings.php?action=get', 'GET', null, token);
+                if (res.success) {
+                    setSettings(res.settings);
+                    // Si el usuario nunca eligió tema en este dispositivo, respetar dark_mode del servidor
+                    if (!localStorage.getItem(THEME_MODE_KEY) && res.settings.dark_mode) setThemeMode('night');
+                }
+            };
+
+            const handleAuth = async (isLogin, data) => {
+                const res = await api.call(`/auth.php?action=${isLogin ? 'login' : 'register'}`, 'POST', data);
+                if (res.success) { setToken(res.token); setUser(res.user); localStorage.setItem('prayer_token', res.token); }
+                return res;
+            };
+            const handleLogout = () => { localStorage.removeItem('prayer_token'); setToken(null); setUser(null); setView('home'); };
+
+            if (loading) return <FullCenter T={T}><Spinner T={T} /></FullCenter>;
+            if (!token) return <AuthScreen T={T} onAuth={handleAuth} lang={settings.language || 'es'} />;
+
+            return (
+                <MainApp user={user} token={token} settings={settings} onLogout={handleLogout} view={view} setView={setView}
+                    onSettingsUpdate={setSettings} T={T} themeMode={themeMode} setThemeMode={setThemeMode} />
+            );
+        };
+
+        // ============ LOGIN ============
+        const AuthScreen = ({ T, onAuth, lang }) => {
+            const [isLogin, setIsLogin] = useState(true);
+            const [name, setName] = useState('');
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+            const [loading, setLoading] = useState(false);
+            const t = translations[lang];
+            const night = T.name === 'night';
+
+            const handleSubmit = async (e) => {
+                e.preventDefault(); setError(''); setLoading(true);
+                const res = await onAuth(isLogin, isLogin ? { email, password } : { name, email, password });
+                if (!res.success) setError(res.error || 'Error');
+                setLoading(false);
+            };
+
+            return (
+                <div style={{ minHeight: '100dvh', background: T.bg, color: T.ink, fontFamily: T.sans, display: 'flex', justifyContent: 'center' }}>
+                    <div className="anim-fade" style={{ width: '100%', maxWidth: 440, padding: '72px 28px 36px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: night ? 'center' : 'flex-start', textAlign: night ? 'center' : 'left' }}>
+                        {night
+                            ? <div style={{ width: 56, height: 56, borderRadius: '50%', border: `1px solid ${T.accent}`, color: T.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon n="book-open" size={24} /></div>
+                            : <img src="/icon-192.png" alt="" style={{ width: 64, height: 64, borderRadius: 16 }} />}
+                        <h1 style={{ margin: '28px 0 0', fontFamily: T.serif, fontWeight: 400, fontSize: night ? 56 : 48, lineHeight: 1 }}>
+                            Maná {night ? <span style={{ fontStyle: 'italic', color: T.accent }}>Digital</span> : 'Digital'}
+                        </h1>
+                        <p style={{ margin: '14px 0 0', fontSize: 16, lineHeight: 1.5, color: T.muted, maxWidth: 290 }}>{t.tagline}</p>
+
+                        <form onSubmit={handleSubmit} style={{ marginTop: 'auto', paddingTop: 48, width: '100%', display: 'flex', flexDirection: 'column', gap: 12, textAlign: 'left' }}>
+                            {!isLogin && <input type="text" placeholder={t.name} value={name} onChange={e => setName(e.target.value)} required style={inputStyle(T)} />}
+                            <input type="email" placeholder={t.email} value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" style={inputStyle(T)} />
+                            <input type="password" placeholder={t.password} value={password} onChange={e => setPassword(e.target.value)} required autoComplete={isLogin ? 'current-password' : 'new-password'} style={inputStyle(T)} />
+                            {error && <div style={{ fontSize: 14, color: T.danger, padding: '4px 4px 0' }}>{error}</div>}
+                            <PrimaryBtn T={T} type="submit" disabled={loading} style={{ marginTop: 8 }}>{loading ? t.loading : (isLogin ? t.login : t.register)}</PrimaryBtn>
+                            <button type="button" onClick={() => { setIsLogin(!isLogin); setError(''); }} style={{ height: 44, border: 'none', background: 'none', color: T.muted, fontSize: 14 }}>
+                                {isLogin ? t.noAccount : t.hasAccount} <span style={{ color: T.accentText, fontWeight: 600 }}>{isLogin ? t.noAccountCta : t.hasAccountCta}</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        // ============ CONTENEDOR PRINCIPAL ============
+        const MainApp = ({ user, token, settings, onLogout, view, setView, onSettingsUpdate, T, themeMode, setThemeMode }) => {
+            const [showCheckin, setShowCheckin] = useState(false);
+            const [todayCheckin, setTodayCheckin] = useState(null);
+            const [currentVerse, setCurrentVerse] = useState(null);
+            const [currentStory, setCurrentStory] = useState(null);
+            const [contentType, setContentType] = useState('verse');
+            const [contentLoading, setContentLoading] = useState(false);
+            const [emotions, setEmotions] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [favoritedVerses, setFavoritedVerses] = useState([]);
+            const lang = settings.language || 'es';
+            const t = translations[lang];
+
+            useEffect(() => { loadData(); }, []);
+
+            useEffect(() => {
+                const handleSWMessage = (event) => {
+                    const { type, verse } = event.data || {};
+                    if (type === 'SHOW_NOTIFICATION_VERSE' && verse) { setCurrentVerse(verse); setContentType('verse'); setView('home'); localStorage.removeItem(NOTIFICATION_VERSE_KEY); }
+                    if (type === 'SAVE_NOTIFICATION_VERSE' && verse) localStorage.setItem(NOTIFICATION_VERSE_KEY, JSON.stringify(verse));
+                };
+                if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', handleSWMessage);
+                const pending = localStorage.getItem(NOTIFICATION_VERSE_KEY);
+                if (pending) { try { setCurrentVerse(JSON.parse(pending)); } catch (e) {} localStorage.removeItem(NOTIFICATION_VERSE_KEY); }
+                return () => { if ('serviceWorker' in navigator) navigator.serviceWorker.removeEventListener('message', handleSWMessage); };
+            }, []);
+
+            const loadData = async () => {
+                try {
+                    setLoading(true);
+                    const [emotionsRes, checkinRes] = await Promise.all([
+                        emotions.length ? Promise.resolve({ success: true, emotions }) : api.call('/checkin.php?action=emotions', 'GET', null, token),
+                        api.call('/checkin.php?action=today', 'GET', null, token)
+                    ]);
+                    if (emotionsRes.success && emotionsRes.emotions) setEmotions(emotionsRes.emotions);
+                    if (checkinRes.success) {
+                        setTodayCheckin(checkinRes.checkin);
+                        if (!checkinRes.has_checkin) setShowCheckin(true); else await loadVerse();
+                    }
+                    if (favoritedVerses.length === 0) await loadFavorites();
+                } catch (error) { console.error('Error loading data:', error); }
+                finally { setLoading(false); }
+            };
+
+            const loadFavorites = async () => {
+                try {
+                    const res = await api.call('/favorites.php?action=list', 'GET', null, token);
+                    if (res.success && res.favorites) setFavoritedVerses(res.favorites.map(f => parseInt(f.verse_id)));
+                } catch (e) { console.error(e); }
+            };
+
+            const toggleFavorite = async (verseId) => {
+                try {
+                    if (favoritedVerses.includes(verseId)) {
+                        const res = await api.call(`/favorites.php?action=remove&verse_id=${verseId}`, 'DELETE', null, token);
+                        if (res.success) setFavoritedVerses(prev => prev.filter(id => id !== verseId));
+                    } else {
+                        const res = await api.call('/favorites.php?action=add', 'POST', { verse_id: verseId }, token);
+                        if (res.success) setFavoritedVerses(prev => [...prev, verseId]);
+                    }
+                } catch (e) { console.error(e); }
+            };
+
+            const fallbackVerse = { id: 1, reference: 'Juan 3:16', text_es: 'Porque de tal manera amó Dios al mundo, que ha dado a su Hijo unigénito, para que todo aquel que en él cree, no se pierda, mas tenga vida eterna.', text_en: 'For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.' };
+            const fallbackStory = { id: 1, title_es: 'David y Goliat', title_en: 'David and Goliath', reference: '1 Samuel 17', summary_es: 'Un joven pastor llamado David enfrentó al gigante filisteo Goliat cuando todo el ejército de Israel tenía miedo. Con solo una honda y cinco piedras, y con fe inquebrantable en Dios, David derrotó al gigante.', summary_en: "A young shepherd named David faced the Philistine giant Goliath when all of Israel's army was afraid. With just a sling and five stones, and unwavering faith in God, David defeated the giant.", moral_es: 'Con fe en Dios, podemos superar cualquier obstáculo que parezca imposible.', moral_en: 'With faith in God, we can overcome any obstacle that seems impossible.' };
+
+            const loadVerse = async (forceNew = false) => {
+                setContentLoading(true);
+                try {
+                    if (!forceNew) {
+                        const pending = localStorage.getItem(NOTIFICATION_VERSE_KEY);
+                        if (pending) { try { setCurrentVerse(JSON.parse(pending)); localStorage.removeItem(NOTIFICATION_VERSE_KEY); setContentLoading(false); return; } catch (e) { localStorage.removeItem(NOTIFICATION_VERSE_KEY); } }
+                    }
+                    const res = await api.call('/verses.php?action=personalized', 'GET', null, token);
+                    setCurrentVerse(res && res.success && res.verse ? res.verse : fallbackVerse);
+                } catch (e) { setCurrentVerse(fallbackVerse); }
+                finally { setContentLoading(false); }
+            };
+
+            const loadStory = async () => {
+                setContentLoading(true);
+                try {
+                    const res = await api.call('/stories.php?action=personalized', 'GET', null, token);
+                    setCurrentStory(res && res.success && res.story ? res.story : fallbackStory);
+                } catch (e) { setCurrentStory(fallbackStory); }
+                finally { setContentLoading(false); }
+            };
+
+            const setContent = (type) => {
+                if (type === contentType) return;
+                setContentType(type);
+                if (type === 'story') loadStory(); else loadVerse(true);
+            };
+
+            const handleCheckin = async (emotionId, notes, contentPref = 'verse') => {
+                try {
+                    const res = await api.call('/checkin.php?action=create', 'POST', { emotion_id: emotionId, notes }, token);
+                    if (res.success) {
+                        setShowCheckin(false);
+                        setContentType(contentPref);
+                        setTimeout(async () => { await loadData(); contentPref === 'story' ? loadStory() : loadVerse(true); }, 200);
+                    }
+                } catch (e) { setShowCheckin(false); }
+            };
+
+            const shell = { minHeight: '100dvh', background: T.bg, color: T.ink, fontFamily: T.sans, transition: 'background .4s, color .4s' };
+            if (loading) return <FullCenter T={T}><Spinner T={T} /></FullCenter>;
+
+            return (
+                <div style={shell}>
+                    <NotificationService token={token} settings={settings} currentVerse={currentVerse} />
+                    {showCheckin && emotions.length > 0 && (
+                        <CheckinSheet T={T} emotions={emotions} lang={lang} t={t} user={user} onSubmit={handleCheckin}
+                            onSkip={() => { setShowCheckin(false); if (!currentVerse) loadVerse(); }} />
+                    )}
+                    <div style={{ maxWidth: 560, margin: '0 auto', padding: `max(16px, env(safe-area-inset-top)) 16px ${view === 'settings' ? 32 : 120}px`, boxSizing: 'border-box' }}>
+                        {view === 'home' && <HomeView T={T} lang={lang} t={t} user={user} verse={currentVerse} story={currentStory} contentType={contentType}
+                            contentLoading={contentLoading} checkin={todayCheckin} onRefresh={contentType === 'verse' ? () => loadVerse(true) : loadStory}
+                            onSetContent={setContent} onShowCheckin={() => setShowCheckin(true)} onOpenSettings={() => setView('settings')}
+                            favoritedVerses={favoritedVerses} onToggleFavorite={toggleFavorite} />}
+                        {view === 'history' && <HistoryView T={T} token={token} lang={lang} t={t} />}
+                        {view === 'stats' && <StatsView T={T} token={token} lang={lang} t={t} />}
+                        {view === 'favorites' && <FavoritesView T={T} token={token} lang={lang} t={t} onChange={loadFavorites} />}
+                        {view === 'settings' && <SettingsView T={T} settings={settings} token={token} onUpdate={onSettingsUpdate} onClose={() => setView('home')}
+                            onLogout={onLogout} t={t} themeMode={themeMode} setThemeMode={setThemeMode} />}
+                    </div>
+                    {view !== 'settings' && <BottomNav T={T} view={view} setView={setView} t={t} />}
+                </div>
+            );
+        };
+
+        // ============ CHECK-IN ============
+        const CheckinSheet = ({ T, emotions, lang, t, user, onSubmit, onSkip }) => {
+            const [selected, setSelected] = useState(null);
+            const [notes, setNotes] = useState('');
+            const [contentPref, setContentPref] = useState('verse');
+            const night = T.name === 'night';
+            const today = new Date().toLocaleDateString(lang, { weekday: 'long', day: 'numeric', month: 'long' });
+
+            return (
+                <div className="anim-fade" style={{ position: 'fixed', inset: 0, zIndex: 50, background: T.overlay, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+                    <div className="anim-up" style={{ width: '100%', maxWidth: 560, maxHeight: '92dvh', overflowY: 'auto', background: T.bg, borderRadius: '32px 32px 0 0', padding: '12px 24px calc(28px + env(safe-area-inset-bottom))', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 20, fontFamily: T.sans, color: T.ink }}>
+                        <div style={{ width: 40, height: 5, borderRadius: 3, background: T.line, alignSelf: 'center' }}></div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase', color: night ? T.accent : T.muted }}>
+                                {night && user ? `${t.hello}, ${user.name.split(' ')[0]}` : today}
+                            </div>
+                            <h2 style={{ margin: 0, fontFamily: T.serif, fontWeight: 400, fontSize: 32 * T.serifSize, lineHeight: 1.08 }}>{t.howFeeling}</h2>
+                        </div>
+                        <div style={night ? { display: 'flex', flexWrap: 'wrap', gap: 10 } : { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 8 }}>
+                            {emotions.map(e => {
+                                const on = selected === e.id;
+                                return (
+                                    <button key={e.id} onClick={() => setSelected(e.id)} aria-pressed={on} style={{
+                                        height: night ? 44 : 48, borderRadius: night ? 22 : 14, padding: night ? '0 16px' : '0 12px',
+                                        display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 500, textAlign: 'left',
+                                        border: `1px solid ${on ? (night ? T.ink : T.accent) : T.line}`,
+                                        background: on ? (night ? T.ink : T.accentSoft) : (night ? 'transparent' : T.surface),
+                                        color: on && night ? T.bg : T.ink, transition: 'all .15s'
+                                    }}>
+                                        <span style={{ width: 10, height: 10, borderRadius: '50%', background: e.color || T.accent, flexShrink: 0 }}></span>
+                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lang === 'es' ? e.name_es : e.name_en}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: T.muted }}>{t.receive}</div>
+                            <Segmented T={T} value={contentPref} onChange={setContentPref} options={[{ value: 'verse', label: t.verse, icon: 'book-open' }, { value: 'story', label: t.story, icon: 'scroll-text' }]} />
+                        </div>
+                        <input value={notes} onChange={e => setNotes(e.target.value)} placeholder={t.notes} style={inputStyle(T)} />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10 }}>
+                            <GhostBtn T={T} onClick={onSkip} style={{ height: 56 }}>{t.skip}</GhostBtn>
+                            <PrimaryBtn T={T} disabled={!selected} onClick={() => selected && onSubmit(selected, notes, contentPref)}>{t.submit}</PrimaryBtn>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // ============ INICIO ============
+        const HomeView = ({ T, lang, t, user, verse, story, contentType, contentLoading, checkin, onRefresh, onSetContent, onShowCheckin, onOpenSettings, favoritedVerses, onToggleFavorite }) => {
+            const night = T.name === 'night';
+            const isStory = contentType === 'story';
+            const isFav = verse && favoritedVerses.includes(parseInt(verse.id));
+            const firstName = user && user.name ? user.name.split(' ')[0] : '';
+            const dateLabel = new Date().toLocaleDateString(lang, { weekday: 'long', day: 'numeric', month: 'short' });
+
+            const share = async () => {
+                if (!verse) return;
+                const text = `“${lang === 'es' ? verse.text_es : verse.text_en}” — ${verse.reference}`;
+                try { if (navigator.share) await navigator.share({ text }); else await navigator.clipboard.writeText(text); } catch (e) {}
+            };
+
+            const content = contentLoading ? (
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 280 }}><Spinner T={T} /></div>
+            ) : isStory ? (story ? (
+                <div className="anim-fade" style={{ display: 'flex', flexDirection: 'column', gap: 14, textAlign: 'left' }}>
+                    <Ref T={T}>{night ? `${t.story} · ` : ''}{story.reference}</Ref>
+                    <h2 style={{ margin: 0, fontFamily: T.serif, fontWeight: 400, fontSize: 40 * T.serifSize, lineHeight: 1.02 }}>{lang === 'es' ? story.title_es : story.title_en}</h2>
+                    <p style={{ margin: 0, fontFamily: night ? T.sans : T.serif, fontSize: night ? 17 : 19, lineHeight: night ? 1.65 : 1.55, color: T.ink2, whiteSpace: 'pre-line', textWrap: 'pretty' }}>{lang === 'es' ? story.summary_es : story.summary_en}</p>
+                    {story.moral_es && (
+                        <div style={night ? { marginTop: 8, borderRadius: 24, background: T.surface, border: `1px solid ${T.line}`, padding: 20 } : { marginTop: 8, borderTop: `1px solid ${T.line}`, paddingTop: 18 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: night ? T.accent : T.muted, marginBottom: 6 }}>{night && <Icon n="lightbulb" size={15} />}{t.lesson}</div>
+                            <p style={{ margin: 0, fontFamily: T.serif, fontStyle: night ? 'normal' : 'italic', fontSize: 21 * T.serifSize, lineHeight: 1.35 }}>{lang === 'es' ? story.moral_es : story.moral_en}</p>
+                        </div>
+                    )}
+                </div>
+            ) : <Empty T={T} icon="scroll-text" text={t.noStory} />) : (verse ? (
+                <div className="anim-fade" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: night ? 'center' : 'stretch', textAlign: night ? 'center' : 'left', gap: 28, justifyContent: 'center' }}>
+                    {night && <div style={{ fontSize: 12, letterSpacing: '.16em', textTransform: 'uppercase', color: T.muted }}>{t.todayWord}</div>}
+                    <p style={{ margin: 0, fontFamily: T.serif, fontSize: night ? 'clamp(28px, 8vw, 38px)' : 'clamp(24px, 6.8vw, 30px)', lineHeight: night ? 1.18 : 1.32, textWrap: night ? 'balance' : 'pretty' }}>
+                        “{lang === 'es' ? verse.text_es : verse.text_en}”
+                    </p>
+                    {night ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: T.accent, fontSize: 14, letterSpacing: '.12em', textTransform: 'uppercase' }}>
+                            <span style={{ width: 24, height: 1, background: T.accent }}></span>{verse.reference}<span style={{ width: 24, height: 1, background: T.accent }}></span>
+                        </div>
+                    ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                            <Ref T={T} style={{ fontSize: 14 }}>{verse.reference}</Ref>
+                            <div style={{ display: 'flex', gap: 8 }}>
+                                <IconBtn T={T} n="heart" label="Favorito" active={isFav} onClick={() => onToggleFavorite(parseInt(verse.id))} />
+                                <IconBtn T={T} n="share-2" label="Compartir" onClick={share} />
+                            </div>
+                        </div>
+                    )}
+                </div>
+            ) : <button onClick={onRefresh} style={{ border: 'none', background: 'none', color: 'inherit', width: '100%' }}><Empty T={T} icon="book-open" text={t.noVerse} /></button>);
+
+            return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minHeight: 'calc(100dvh - 160px)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '0 4px' }}>
+                        {night ? (
+                            checkin ? (
+                                <button onClick={onShowCheckin} style={{ height: 40, borderRadius: 20, border: `1px solid ${T.line}`, background: 'transparent', display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px', fontSize: 14, color: T.muted }}>
+                                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: checkin.color || T.accent }}></span>
+                                    {lang === 'es' ? checkin.name_es : checkin.name_en}<Icon n="pencil" size={13} />
+                                </button>
+                            ) : <div style={{ fontFamily: T.serif, fontSize: 26 }}>{t.hello}, {firstName}</div>
+                        ) : (
+                            <div>
+                                <div style={{ fontSize: 13, color: T.muted, textTransform: 'capitalize' }}>{dateLabel}</div>
+                                <div style={{ fontFamily: T.serif, fontSize: 26 }}>{t.hello}, {firstName}</div>
+                            </div>
+                        )}
+                        <IconBtn T={T} n="settings" label={t.settings} onClick={onOpenSettings} />
+                    </div>
+
+                    {!night && checkin && (
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '0 4px' }}>
+                            <button onClick={onShowCheckin} style={{ height: 36, borderRadius: 18, background: T.surface, border: `1px solid ${T.line}`, display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px', fontSize: 13, fontWeight: 600, color: T.ink }}>
+                                <span style={{ width: 8, height: 8, borderRadius: '50%', background: checkin.color || T.accent }}></span>
+                                {lang === 'es' ? checkin.name_es : checkin.name_en}<Icon n="pencil" size={13} style={{ color: T.faint }} />
+                            </button>
+                        </div>
+                    )}
+
+                    <div style={{ padding: night ? '0 4px' : 0 }}>
+                        <Segmented T={T} value={contentType} onChange={onSetContent} options={[{ value: 'verse', label: t.verse }, { value: 'story', label: t.story }]} />
+                    </div>
+
+                    {night ? (
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px 16px 0' }}>{content}</div>
+                    ) : (
+                        <Card T={T} style={{ flex: 1, padding: '32px 26px', display: 'flex', flexDirection: 'column', minHeight: 360 }}>{content}</Card>
+                    )}
+
+                    {night ? (
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: 16, paddingTop: 8 }}>
+                            {!isStory && verse && <button onClick={() => onToggleFavorite(parseInt(verse.id))} aria-label="Favorito" style={{ width: 52, height: 52, borderRadius: '50%', border: `1px solid ${isFav ? T.accent : T.line}`, background: isFav ? T.accentSoft : 'transparent', color: T.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon n="heart" size={20} /></button>}
+                            <button onClick={onRefresh} style={{ height: 52, borderRadius: 26, border: 'none', background: T.ink, color: T.bg, fontSize: 15, fontWeight: 600, padding: '0 24px', display: 'flex', alignItems: 'center', gap: 8 }}><Icon n="refresh-cw" size={17} />{isStory ? t.newStory : t.newVerse}</button>
+                            {!isStory && verse && <button onClick={share} aria-label="Compartir" style={{ width: 52, height: 52, borderRadius: '50%', border: `1px solid ${T.line}`, background: 'transparent', color: T.ink, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon n="share-2" size={20} /></button>}
+                        </div>
+                    ) : (
+                        <GhostBtn T={T} onClick={onRefresh}><Icon n="refresh-cw" size={17} />{isStory ? t.newStory : t.newVerse}</GhostBtn>
+                    )}
+                </div>
+            );
+        };
+
+        // ============ HISTORIAL ============
+        const HistoryView = ({ T, token, lang, t }) => {
+            const [history, setHistory] = useState(null);
+            const night = T.name === 'night';
+            useEffect(() => { api.call('/verses.php?action=history', 'GET', null, token).then(res => setHistory(res.success ? res.history : [])); }, []);
+            const fmt = (d) => new Date(d).toLocaleString(lang, { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+
+            return (
+                <div>
+                    <PageTitle T={T}>{t.history}</PageTitle>
+                    {!history ? <FullCenter T={T}><Spinner T={T} /></FullCenter> : history.length === 0 ? <Empty T={T} icon="history" text={t.noHistory} /> : (
+                        <div style={{ padding: '0 4px' }}>
+                            {history.map((item, i) => night ? (
+                                <div key={item.history_id} style={{ display: 'grid', gridTemplateColumns: '14px 1fr', gap: 16 }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                        <span style={{ width: 10, height: 10, borderRadius: '50%', background: item.emotion_color || T.accent, marginTop: 5, flexShrink: 0 }}></span>
+                                        {i < history.length - 1 && <span style={{ flex: 1, width: 1, background: T.line }}></span>}
+                                    </div>
+                                    <div style={{ paddingBottom: 24, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                        <div style={{ fontSize: 13, color: T.muted }}>{fmt(item.sent_at)}{item.emotion_emoji ? ` · ${item.emotion_emoji}` : ''}</div>
+                                        <p style={{ margin: 0, fontFamily: T.serif, fontSize: 21, lineHeight: 1.25 }}>{lang === 'es' ? item.text_es : item.text_en}</p>
+                                        <Ref T={T}>{item.reference}</Ref>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div key={item.history_id} style={{ padding: '18px 0', borderTop: `1px solid ${T.line}`, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: T.muted }}>
+                                        <span>{item.emotion_emoji}</span><span>{fmt(item.sent_at)}</span>
+                                    </div>
+                                    <p style={{ margin: 0, fontFamily: T.serif, fontSize: 18, lineHeight: 1.4 }}>{lang === 'es' ? item.text_es : item.text_en}</p>
+                                    <Ref T={T}>{item.reference}</Ref>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // ============ ESTADÍSTICAS ============
+        const StatsView = ({ T, token, lang, t }) => {
+            const [stats, setStats] = useState(null);
+            const night = T.name === 'night';
+            useEffect(() => { api.call('/checkin.php?action=stats&days=30', 'GET', null, token).then(res => { if (res.success) setStats(res.stats); }); }, []);
+            if (!stats) return <FullCenter T={T}><Spinner T={T} /></FullCenter>;
+            const list = [...(stats.emotions || [])].filter(e => +e.count > 0).sort((a, b) => b.count - a.count);
+            const max = Math.max(1, ...list.map(e => +e.count));
+
+            const Bars = () => list.map(e => (
+                <div key={e.id || e.name_es} style={night ? { display: 'flex', flexDirection: 'column', gap: 6 } : { display: 'grid', gridTemplateColumns: '100px 1fr 28px', alignItems: 'center', gap: 10 }}>
+                    {night ? <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15 }}><span>{lang === 'es' ? e.name_es : e.name_en}</span><span style={{ color: T.muted }}>{e.count}</span></div>
+                           : <span style={{ fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lang === 'es' ? e.name_es : e.name_en}</span>}
+                    <span style={{ height: night ? 4 : 8, borderRadius: 4, background: T.track, display: 'block', overflow: 'hidden' }}>
+                        <span style={{ display: 'block', height: '100%', width: `${(e.count / max) * 100}%`, background: e.color || T.accent, borderRadius: 4, transition: 'width .6s' }}></span>
+                    </span>
+                    {!night && <span style={{ fontSize: 14, fontWeight: 600, textAlign: 'right' }}>{e.count}</span>}
+                </div>
+            ));
+
+            return night ? (
+                <div style={{ padding: '8px 4px' }}>
+                    <div style={{ fontSize: 12, letterSpacing: '.16em', textTransform: 'uppercase', color: T.muted }}>{t.currentStreak}</div>
+                    <div style={{ fontFamily: T.serif, fontSize: 96, lineHeight: 1, color: T.accent }}>{stats.current_streak} <span style={{ fontSize: 32, color: T.ink }}>{t.days}</span></div>
+                    <div style={{ fontSize: 15, color: T.muted, marginTop: 4 }}>{stats.total_checkins} {t.checkins.toLowerCase()} · {t.last30.toLowerCase()}</div>
+                    <div style={{ marginTop: 36, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        <div style={{ fontSize: 12, letterSpacing: '.16em', textTransform: 'uppercase', color: T.muted }}>{t.mostFelt}</div>
+                        <Bars />
+                    </div>
+                </div>
+            ) : (
+                <div>
+                    <PageTitle T={T}>{t.emotionalJourney}</PageTitle>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                            <Card T={T} style={{ padding: 18 }}><div style={{ fontSize: 13, color: T.muted }}>{t.currentStreak}</div><div style={{ fontFamily: T.serif, fontSize: 44, lineHeight: 1.1 }}>{stats.current_streak}<span style={{ fontSize: 18, color: T.muted }}> {t.days}</span></div></Card>
+                            <Card T={T} style={{ padding: 18 }}><div style={{ fontSize: 13, color: T.muted }}>{t.checkins}</div><div style={{ fontFamily: T.serif, fontSize: 44, lineHeight: 1.1 }}>{stats.total_checkins}</div></Card>
+                        </div>
+                        <Card T={T} style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: T.muted }}>{t.mostFelt} · {t.last30.toLowerCase()}</div>
+                            <Bars />
+                        </Card>
+                    </div>
+                </div>
+            );
+        };
+
+        // ============ FAVORITOS ============
+        const FavoritesView = ({ T, token, lang, t, onChange }) => {
+            const [favorites, setFavorites] = useState(null);
+            const load = () => api.call('/favorites.php?action=list', 'GET', null, token).then(res => setFavorites(res.success ? res.favorites : []));
+            useEffect(() => { load(); }, []);
+            const remove = async (verseId) => {
+                const res = await api.call(`/favorites.php?action=remove&verse_id=${verseId}`, 'DELETE', null, token);
+                if (res.success) { setFavorites(f => f.filter(x => x.verse_id !== verseId)); onChange && onChange(); }
+            };
+            return (
+                <div>
+                    <PageTitle T={T} right={favorites && favorites.length > 0 && <span style={{ fontSize: 14, color: T.muted }}>{favorites.length} {t.verses}</span>}>{t.favorites}</PageTitle>
+                    {!favorites ? <FullCenter T={T}><Spinner T={T} /></FullCenter> : favorites.length === 0 ? <Empty T={T} icon="heart" text={t.noFavorites} /> : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            {favorites.map(item => (
+                                <Card key={item.favorite_id} T={T} style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                    <p style={{ margin: 0, fontFamily: T.serif, fontSize: 19 * T.serifSize, lineHeight: 1.32 }}>{lang === 'es' ? item.text_es : item.text_en}</p>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <Ref T={T}>{item.reference}</Ref>
+                                        <button onClick={() => remove(item.verse_id)} aria-label="Quitar" style={{ width: 44, height: 44, marginRight: -10, border: 'none', background: 'none', color: T.accentText, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon n="heart-off" size={18} /></button>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // ============ AJUSTES (pantalla) ============
+        const SettingsView = ({ T, settings, token, onUpdate, onClose, onLogout, t, themeMode, setThemeMode }) => {
+            const [s, setS] = useState(settings);
+            const [saving, setSaving] = useState(false);
+            const [schedules, setSchedules] = useState([]);
+            const [newSchedule, setNewSchedule] = useState('');
+            const set = (patch) => setS(prev => ({ ...prev, ...patch }));
+
+            useEffect(() => { loadSchedules(); }, []);
+            const loadSchedules = async () => { try { const res = await api.call('/settings.php?action=get', 'GET', null, token); if (res.success && res.schedules) setSchedules(res.schedules); } catch (e) {} };
+            const addSchedule = async () => { if (!newSchedule) return; const res = await api.call('/settings.php?action=add-schedule', 'POST', { time: newSchedule + ':00' }, token); if (res.success) { await loadSchedules(); setNewSchedule(''); } };
+            const removeSchedule = async (id) => { const res = await api.call(`/settings.php?action=remove-schedule&id=${id}`, 'DELETE', null, token); if (res.success) loadSchedules(); };
+            const handleSave = async () => {
+                setSaving(true);
+                const payload = { ...s, dark_mode: themeMode === 'night' };
+                const res = await api.call('/settings.php?action=update', 'PUT', payload, token);
+                if (res.success) { onUpdate(payload); onClose(); }
+                setSaving(false);
+            };
+
+            const Section = ({ title, children }) => (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ padding: '12px 8px 0', fontSize: 12, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: T.muted }}>{title}</div>
+                    <Card T={T} style={{ display: 'flex', flexDirection: 'column' }}>{children}</Card>
+                </div>
+            );
+            const Row = ({ label, hint, children, last }) => (
+                <div style={{ minHeight: 60, padding: '12px 16px', boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderBottom: last ? 'none' : `1px solid ${T.line2}` }}>
+                    <div><div style={{ fontSize: 15, fontWeight: 500 }}>{label}</div>{hint && <div style={{ fontSize: 13, color: T.muted, marginTop: 2 }}>{hint}</div>}</div>
+                    {children}
+                </div>
+            );
+            const Block = ({ label, children, last }) => (
+                <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10, borderBottom: last ? 'none' : `1px solid ${T.line2}` }}>
+                    <div style={{ fontSize: 15, fontWeight: 500 }}>{label}</div>{children}
+                </div>
+            );
+            const chip = { height: 38, borderRadius: 19, display: 'flex', alignItems: 'center', gap: 6, padding: '0 6px 0 14px', fontSize: 14, fontWeight: 600, background: T.accentSoft, color: T.accentText, border: T.pill ? `1px solid ${T.accent}` : 'none' };
+            const smallInput = { ...inputStyle(T), height: 44, width: 'auto', flex: 1 };
+
+            return (
+                <div className="anim-fade" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <button onClick={onClose} aria-label="Volver" style={{ width: 44, height: 44, border: 'none', background: 'none', color: T.ink, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon n="chevron-left" size={24} /></button>
+                        <h2 style={{ margin: 0, fontFamily: T.serif, fontWeight: 400, fontSize: 32 * T.serifSize }}>{t.settings}</h2>
+                    </div>
+
+                    <Section title={t.appearance}>
+                        <Block label={t.theme}>
+                            <Segmented T={T} value={themeMode} onChange={setThemeMode} options={[{ value: 'day', label: t.day, icon: 'sun' }, { value: 'auto', label: t.auto }, { value: 'night', label: t.night, icon: 'moon' }]} />
+                            {themeMode === 'auto' && <div style={{ fontSize: 13, color: T.muted }}>{t.autoHint}</div>}
+                        </Block>
+                        <Row label={t.language} last>
+                            <select value={s.language} onChange={e => set({ language: e.target.value })} style={{ height: 40, borderRadius: 12, border: `1px solid ${T.line}`, background: T.surface, color: T.ink, padding: '0 10px' }}>
+                                <option value="es">Español</option><option value="en">English</option>
+                            </select>
+                        </Row>
+                    </Section>
+
+                    <Section title={t.reminders}>
+                        <Row label={t.notifications} last={!s.notifications_enabled}><Toggle T={T} on={!!s.notifications_enabled} onChange={v => set({ notifications_enabled: v })} /></Row>
+                        {s.notifications_enabled && (<>
+                            <Row label={t.pause}><Toggle T={T} on={!!s.notifications_paused} onChange={v => set({ notifications_paused: v })} /></Row>
+                            <Block label={t.frequency}>
+                                <Segmented T={T} value={s.interval_mode ? 'interval' : 'fixed'} onChange={v => set({ interval_mode: v === 'interval' })} options={[{ value: 'interval', label: t.interval, icon: 'clock' }, { value: 'fixed', label: t.fixed, icon: 'calendar' }]} />
+                                {s.interval_mode ? (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                        <span style={{ fontSize: 14, color: T.muted, flex: 1 }}>{t.everyHours}</span>
+                                        <input type="number" min="1" max="24" value={s.interval_hours || 2} onChange={e => set({ interval_hours: parseInt(e.target.value) })} style={{ ...smallInput, flex: 'none', width: 88, textAlign: 'center' }} />
+                                    </div>
+                                ) : (<>
+                                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                        {schedules.length === 0 && <span style={{ fontSize: 14, color: T.muted }}>{t.noSchedules}</span>}
+                                        {schedules.map(sc => (
+                                            <span key={sc.id} style={chip}>{sc.time.substring(0, 5)}
+                                                <button onClick={() => removeSchedule(sc.id)} aria-label="Eliminar" style={{ width: 28, height: 28, border: 'none', background: 'none', color: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon n="x" size={14} /></button>
+                                            </span>
+                                        ))}
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 8 }}>
+                                        <input type="time" value={newSchedule} onChange={e => setNewSchedule(e.target.value)} style={smallInput} />
+                                        <button onClick={addSchedule} disabled={!newSchedule} style={{ height: 44, borderRadius: T.pill ? 22 : 12, border: 'none', padding: '0 16px', background: T.accent, color: T.accentInk, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, opacity: newSchedule ? 1 : .45 }}><Icon n="plus" size={16} />{t.add}</button>
+                                    </div>
+                                </>)}
+                            </Block>
+                            <Row label={t.dailyCheckin} hint={(s.checkin_time || '09:00').substring(0, 5)} last><Toggle T={T} on={!!s.checkin_notification} onChange={v => set({ checkin_notification: v })} /></Row>
+                        </>)}
+                    </Section>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 16 }}>
+                        <PrimaryBtn T={T} onClick={handleSave} disabled={saving}>{saving ? t.loading : t.save}</PrimaryBtn>
+                        <GhostBtn T={T} onClick={onLogout} style={{ color: T.danger }}>{t.logout}</GhostBtn>
+                    </div>
+                </div>
+            );
+        };
+
+        // Servicio de Notificaciones
+            const NotificationService = ({ token, settings, currentVerse }) => {
+                const [permission, setPermission] = useState(Notification.permission);
+                const [lastNotification, setLastNotification] = useState(null);
+                const lastNotifiedTimeRef = useRef(null); // Para evitar notificaciones duplicadas
+
+                // Función auxiliar para enviar notificación y guardar versículo
+                const sendVerseNotification = async (verse, source = 'manual') => {
+                    const text = settings.language === 'es' ? verse.text_es : verse.text_en;
+
+                    // Guardar versículo en localStorage ANTES de enviar la notificación
+                    localStorage.setItem(NOTIFICATION_VERSE_KEY, JSON.stringify(verse));
+                    console.log('💾 Versículo guardado para notificación:', verse.reference);
+
+                    // Intentar usar Service Worker si está disponible
+                    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                        navigator.serviceWorker.controller.postMessage({
+                            type: 'SHOW_NOTIFICATION',
+                            data: {
+                                title: 'Recordatorio de Oración',
+                                body: `${verse.reference}\n\n${text.substring(0, 100)}...`,
+                                verse: verse,
+                                tag: 'prayer-reminder'
+                            }
+                        });
+                        console.log('✅ Notificación enviada via SW (' + source + ')');
+                    } else {
+                        // Fallback: usar Web Notification API directamente
+                        const notification = new Notification('Recordatorio de Oración', {
+                            body: `${verse.reference}\n\n${text.substring(0, 100)}...`,
+                            icon: '/icon-192.png',
+                            badge: '/icon-192.png',
+                            tag: 'prayer-reminder',
+                            requireInteraction: false,
+                            data: { verse: verse }
+                        });
+
+                        // Manejar clic en la notificación
+                        notification.onclick = () => {
+                            window.focus();
+                            notification.close();
+                        };
+
+                        console.log('✅ Notificación enviada directamente (' + source + ')');
+                    }
+
+                    setLastNotification(new Date().toISOString());
+                };
+
+                // Solicitar permisos
+                useEffect(() => {
+                    if (settings.notifications_enabled && permission === 'default') {
+                        Notification.requestPermission().then(perm => {
+                            setPermission(perm);
+                            console.log('🔔 Permiso de notificaciones:', perm);
+                        });
+                    }
+                }, [settings.notifications_enabled]);
+
+                // Sistema de notificaciones por intervalo
+                useEffect(() => {
+                    if (!settings.notifications_enabled || settings.notifications_paused || permission !== 'granted') {
+                        return;
+                    }
+
+                    if (settings.interval_mode) {
+                        const hours = settings.interval_hours || 2;
+                        const intervalMs = hours * 60 * 60 * 1000;
+
+                        console.log(`⏰ Notificaciones cada ${hours} hora(s)`);
+
+                        const sendNotification = async () => {
+                            try {
+                                const res = await api.call('/verses.php?action=personalized', 'GET', null, token);
+
+                                if (res.success && res.verse) {
+                                    await sendVerseNotification(res.verse, 'intervalo');
+                                }
+                            } catch (error) {
+                                console.error('Error sending notification:', error);
+                            }
+                        };
+
+                        // Primera notificación después de 1 minuto (para testing)
+                        const firstTimeout = setTimeout(sendNotification, 60000);
+
+                        // Luego cada X horas
+                        const interval = setInterval(sendNotification, intervalMs);
+
+                        return () => {
+                            clearTimeout(firstTimeout);
+                            clearInterval(interval);
+                        };
+                    }
+                }, [settings, permission, token]);
+
+                // Sistema de notificaciones por horarios
+                useEffect(() => {
+                    if (!settings.notifications_enabled || settings.notifications_paused || permission !== 'granted') {
+                        return;
+                    }
+
+                    if (!settings.interval_mode) {
+                        const checkSchedules = async () => {
+                            const now = new Date();
+                            const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+                            // Evitar notificaciones duplicadas en el mismo minuto
+                            if (lastNotifiedTimeRef.current === currentTime) {
+                                return;
+                            }
+
+                            // Obtener horarios del servidor
+                            const res = await api.call('/settings.php?action=get', 'GET', null, token);
+
+                            if (res.success && res.schedules) {
+                                for (const schedule of res.schedules) {
+                                    const scheduleTime = schedule.time.substring(0, 5);
+
+                                    if (scheduleTime === currentTime) {
+                                        try {
+                                            const verseRes = await api.call('/verses.php?action=personalized', 'GET', null, token);
+
+                                            if (verseRes.success && verseRes.verse) {
+                                                await sendVerseNotification(verseRes.verse, 'horario ' + scheduleTime);
+                                                lastNotifiedTimeRef.current = currentTime;
+                                            }
+                                        } catch (error) {
+                                            console.error('Error sending scheduled notification:', error);
+                                        }
+                                        break; // Solo enviar una notificación por verificación
+                                    }
+                                }
+                            }
+                        };
+
+                        // Verificar cada minuto
+                        const interval = setInterval(checkSchedules, 60000);
+
+                        // Verificar inmediatamente
+                        checkSchedules();
+
+                        return () => clearInterval(interval);
+                    }
+                }, [settings, permission, token]);
+
+                // Notificación de check-in diario
+                useEffect(() => {
+                    if (!settings.notifications_enabled || !settings.checkin_notification || permission !== 'granted') {
+                        return;
+                    }
+
+                    const checkDailyReminder = async () => {
+                        const now = new Date();
+                        const hour = now.getHours();
+                        const minute = now.getMinutes();
+
+                        // Hora del check-in (por defecto 9:00 AM)
+                        const checkinTime = settings.checkin_time || '09:00:00';
+                        const [checkinHour, checkinMinute] = checkinTime.split(':').map(Number);
+
+                        if (hour === checkinHour && minute === checkinMinute) {
+                            // Verificar si ya hizo check-in hoy
+                            const res = await api.call('/checkin.php?action=today', 'GET', null, token);
+
+                            if (res.success && !res.has_checkin) {
+                                new Notification('Buenos días', {
+                                    body: '¿Cómo te sientes hoy? Haz tu check-in emocional',
+                                    icon: '/icon-192.png',
+                                    badge: '/icon-192.png',
+                                    tag: 'daily-checkin',
+                                    requireInteraction: true
+                                });
+
+                                console.log('✅ Notificación de check-in enviada');
+                            }
+                        }
+                    };
+
+                    // Verificar cada minuto
+                    const interval = setInterval(checkDailyReminder, 60000);
+
+                    return () => clearInterval(interval);
+                }, [settings, permission, token]);
+
+                return null; // Este componente no renderiza nada
+            };
+
+        // ============ NAVEGACIÓN ============
+        const BottomNav = ({ T, view, setView, t }) => {
+            const items = [
+                { id: 'home', icon: 'house', label: t.home },
+                { id: 'history', icon: 'history', label: t.history },
+                { id: 'stats', icon: 'chart-no-axes-column', label: t.stats },
+                { id: 'favorites', icon: 'heart', label: t.favorites }
+            ];
+            if (T.pill) {
+                return (
+                    <nav style={{ position: 'fixed', left: 0, right: 0, bottom: 'calc(16px + env(safe-area-inset-bottom))', display: 'flex', justifyContent: 'center', padding: '0 20px', zIndex: 40 }}>
+                        <div style={{ width: '100%', maxWidth: 420, height: 64, borderRadius: 32, background: T.surface, border: `1px solid ${T.line}`, display: 'grid', gridTemplateColumns: `repeat(${items.length},1fr)`, alignItems: 'center', padding: '0 6px', boxSizing: 'border-box', boxShadow: '0 12px 30px rgba(0,0,0,.35)' }}>
+                            {items.map(it => {
+                                const on = view === it.id;
+                                return <button key={it.id} onClick={() => setView(it.id)} aria-label={it.label} aria-current={on ? 'page' : undefined} style={{ height: 52, borderRadius: 26, border: 'none', background: on ? T.line : 'transparent', color: on ? T.accent : T.muted, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 13, fontWeight: 500 }}><Icon n={it.icon} size={21} />{on && <span>{it.label}</span>}</button>;
+                            })}
+                        </div>
+                    </nav>
+                );
+            }
+            return (
+                <nav style={{ position: 'fixed', left: 0, right: 0, bottom: 0, background: T.surface, borderTop: `1px solid ${T.line2}`, paddingBottom: 'env(safe-area-inset-bottom)', zIndex: 40 }}>
+                    <div style={{ maxWidth: 560, margin: '0 auto', display: 'grid', gridTemplateColumns: `repeat(${items.length},1fr)` }}>
+                        {items.map(it => {
+                            const on = view === it.id;
+                            return <button key={it.id} onClick={() => setView(it.id)} aria-current={on ? 'page' : undefined} style={{ height: 68, border: 'none', background: 'none', color: on ? T.accent : T.faint, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, fontSize: 11, fontWeight: on ? 700 : 600 }}><Icon n={it.icon} size={22} />{it.label}</button>;
+                        })}
+                    </div>
+                </nav>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

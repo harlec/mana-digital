@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Manrope:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/lucide-static@0.460.0/font/lucide.css">
+<style>
+body{margin:0;background:#E9E4DC;-webkit-font-smoothing:antialiased}
+a{color:#6B3FBF}a:hover{color:#4F2C94}
+button{font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+textarea,input{font:inherit}
+[data-screen-label="Teléfono"] *{scrollbar-width:none}
+[data-screen-label="Teléfono"] *::-webkit-scrollbar{display:none}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:56px;padding:48px 24px;box-sizing:border-box;font-family:Manrope,sans-serif;color:#26211C">
+
+<div style="width:300px;display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#6E655B;letter-spacing:.04em">V2 · HERRAMIENTA DEVOCIONAL</div>
+<h1 style="margin:0;font-family:Newsreader,serif;font-weight:400;font-size:34px;line-height:1.1">Tu día con Dios, de la mañana a la noche</h1>
+<p style="margin:0;font-size:14px;line-height:1.55;color:#5A5249;text-wrap:pretty">Mañana: la Palabra (por plan o según cómo te sentiste ayer). Durante el día: momentos de comunión. Noche: examen y devocional. Y un grupo de amigos que se acompaña.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6E655B;padding-bottom:4px">Mapa de la app</div>
+<sc-for list="{{ tree }}" as="g" hint-placeholder-count="5"><div style="display:flex;flex-direction:column;gap:2px;padding-bottom:8px"><div style="display:flex;align-items:center;gap:8px;padding:6px 4px;font-size:13px;font-weight:700;color:#26211C"><i class="{{ g.icon }}" style="font-size:16px;color:#6B3FBF"></i>{{ g.label }}<span style="font-size:11px;font-weight:500;color:#9C9285">{{ g.where }}</span></div><sc-for list="{{ g.items }}" as="j" hint-placeholder-count="3"><button onClick="{{ j.go }}" style="height:34px;border:none;border-radius:10px;background:{{ j.bg }};color:{{ j.fg }};text-align:left;padding:0 12px 0 28px;font-size:13px;font-weight:500">{{ j.label }}</button></sc-for></div></sc-for>
+</div>
+<div style="font-size:12px;color:#8A8075;line-height:1.5">Prueba: en Lectura toca un versículo para marcarlo como tu rhema; aparece en el devocional, en tus momentos del día y en el examen de la noche.</div>
+</div>
+
+<div data-screen-label="Teléfono" style="width:390px;height:844px;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #1C1917,0 50px 80px -30px rgba(40,30,20,.5);flex-shrink:0">
+
+<sc-if value="{{ is.home }}" hint-placeholder-val="{{ true }}">
+<div data-screen-label="Hoy" style="position:absolute;inset:0;background:#F5F0E8;display:flex;flex-direction:column">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;font-size:15px;font-weight:600">7:05</div>
+<div style="flex:1;overflow-y:auto;padding:8px 18px 20px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:0 6px"><div><div style="font-size:13px;color:#6E655B">Lunes 2 de noviembre · 12 días seguidos</div><div style="font-family:Newsreader,serif;font-size:28px;line-height:1.15">Buenos días, Harle</div></div><button onClick="{{ goMe }}" aria-label="Menú" style="width:44px;height:44px;border-radius:50%;border:none;background:#EEE7F8;color:#5A33A8;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px">H</button></div>
+
+<sc-if value="{{ nudged }}" hint-placeholder-val="{{ true }}">
+<button onClick="{{ goRead }}" style="border:none;border-radius:18px;background:#FBF1DC;padding:12px 14px;display:flex;align-items:center;gap:12px;text-align:left;color:#26211C"><span style="width:36px;height:36px;border-radius:50%;background:#E8B04B;color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">A</span><span style="flex:1;font-size:14px;line-height:1.4"><b>Ana</b> te recordó: “¿Ya leíste hoy? Te espero en Juan 14”</span><i class="icon-chevron-right" style="color:#9C9285"></i></button>
+</sc-if>
+
+<div style="background:#FFFDF9;border:1px solid #EAE3D8;border-radius:26px;padding:8px 0">
+<div style="padding:12px 20px 4px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6E655B">Tu día con Dios</div>
+<button onClick="{{ goRead }}" style="width:100%;border:none;background:none;padding:14px 20px;display:grid;grid-template-columns:40px 1fr auto;gap:14px;align-items:center;text-align:left;color:#26211C"><span style="width:40px;height:40px;border-radius:50%;background:{{ dot1.bg }};color:{{ dot1.fg }};display:flex;align-items:center;justify-content:center;font-size:18px"><i class="{{ dot1.icon }}"></i></span><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:#6E655B">Mañana · La Palabra</span><span style="font-family:Newsreader,serif;font-size:19px">{{ passage.title }}</span></span><span style="font-size:12px;font-weight:700;color:{{ dot1.tagFg }}">{{ dot1.tag }}</span></button>
+<div style="margin-left:39px;width:1px;height:10px;background:#E2D9CC"></div>
+<button onClick="{{ goCommune }}" style="width:100%;border:none;background:none;padding:14px 20px;display:grid;grid-template-columns:40px 1fr auto;gap:14px;align-items:center;text-align:left;color:#26211C"><span style="width:40px;height:40px;border-radius:50%;background:{{ dot2.bg }};color:{{ dot2.fg }};display:flex;align-items:center;justify-content:center;font-size:18px"><i class="icon-sun"></i></span><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:#6E655B">Durante el día · Comunión</span><span style="font-family:Newsreader,serif;font-size:19px">{{ momentsLabel }}</span></span><span style="display:flex;gap:4px"><sc-for list="{{ momentDots }}" as="m" hint-placeholder-count="3"><span style="width:8px;height:8px;border-radius:50%;background:{{ m.bg }}"></span></sc-for></span></button>
+<div style="margin-left:39px;width:1px;height:10px;background:#E2D9CC"></div>
+<button onClick="{{ goExamen }}" style="width:100%;border:none;background:none;padding:14px 20px;display:grid;grid-template-columns:40px 1fr auto;gap:14px;align-items:center;text-align:left;color:#26211C"><span style="width:40px;height:40px;border-radius:50%;background:{{ dot3.bg }};color:{{ dot3.fg }};display:flex;align-items:center;justify-content:center;font-size:18px"><i class="icon-moon"></i></span><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:#6E655B">Noche · Examen del día</span><span style="font-family:Newsreader,serif;font-size:19px">{{ examenLabel }}</span></span><span style="font-size:12px;font-weight:700;color:{{ dot3.tagFg }}">{{ dot3.tag }}</span></button>
+</div>
+
+<sc-if value="{{ notRead }}" hint-placeholder-val="{{ true }}">
+<button onClick="{{ goRead }}" style="height:58px;border:none;border-radius:18px;background:#26211C;color:#F5F0E8;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px"><i class="icon-book-open"></i>Abrir la Palabra de hoy</button>
+</sc-if>
+
+<button onClick="{{ goGroup }}" style="background:#FFFDF9;border:1px solid #EAE3D8;border-radius:24px;padding:18px 20px;display:flex;flex-direction:column;gap:14px;text-align:left;color:#26211C">
+<div style="display:flex;justify-content:space-between;align-items:center;width:100%"><span style="font-family:Newsreader,serif;font-size:20px">Alma</span><span style="font-size:13px;color:#6E655B">{{ groupRead }} de 6 leyeron hoy</span></div>
+<div style="display:flex;gap:10px"><sc-for list="{{ members }}" as="m" hint-placeholder-count="6"><span style="display:flex;flex-direction:column;align-items:center;gap:4px"><span style="width:42px;height:42px;border-radius:50%;padding:2px;border:2px solid {{ m.ring }};box-sizing:border-box;display:flex"><span style="flex:1;border-radius:50%;background:{{ m.color }};color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center">{{ m.i }}</span></span><span style="font-size:11px;color:#6E655B">{{ m.short }}</span></span></sc-for></div>
+</button>
+</div>
+<div style="height:78px;background:#FFFDF9;border-top:1px solid #EAE3D8;display:grid;grid-template-columns:repeat(4,1fr);padding-bottom:10px"><sc-for list="{{ nav }}" as="t" hint-placeholder-count="4"><button onClick="{{ t.go }}" style="border:none;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:{{ t.color }};font-size:11px;font-weight:700"><i class="{{ t.icon }}" style="font-size:22px"></i>{{ t.label }}</button></sc-for></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.read }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Lectura" style="position:absolute;inset:0;background:#F5F0E8;display:flex;flex-direction:column">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;font-size:15px;font-weight:600">7:08</div>
+<div style="padding:4px 12px 0 8px;display:flex;align-items:center;gap:8px"><button onClick="{{ goHome }}" style="width:44px;height:44px;border:none;background:none;font-size:22px;color:#26211C;display:flex;align-items:center;justify-content:center"><i class="icon-chevron-left"></i></button><div style="flex:1;display:grid;grid-template-columns:1fr 1fr;background:#EAE3D8;border-radius:12px;padding:3px"><sc-for list="{{ sources }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.pick }}" style="height:36px;border:none;border-radius:10px;background:{{ o.bg }};color:{{ o.fg }};font-size:13px;font-weight:600;box-shadow:{{ o.shadow }}">{{ o.label }}</button></sc-for></div><button onClick="{{ toggleSpeak }}" aria-label="Escuchar" style="width:44px;height:44px;border-radius:50%;border:none;background:#6B3FBF;color:#fff;font-size:17px;display:flex;align-items:center;justify-content:center"><i class="{{ speakIcon }}"></i></button></div>
+<div style="flex:1;overflow-y:auto;padding:22px 26px 12px;display:flex;flex-direction:column;gap:6px">
+<div style="font-size:13px;color:#6E655B;line-height:1.45">{{ passage.why }}</div>
+<h2 style="margin:4px 0 12px;font-family:Newsreader,serif;font-weight:400;font-size:34px;line-height:1.05">{{ passage.title }}</h2>
+<sc-for list="{{ verses }}" as="v" hint-placeholder-count="5"><button onClick="{{ v.pick }}" style="border:none;border-radius:12px;background:{{ v.bg }};padding:8px 10px;margin:0 -10px;text-align:left;font-family:Newsreader,serif;font-size:20px;line-height:1.5;color:#26211C;display:block"><sup style="font-family:Manrope,sans-serif;font-size:11px;font-weight:700;color:#6B3FBF;margin-right:6px">{{ v.n }}</sup>{{ v.t }}</button></sc-for>
+<div style="margin-top:10px;font-size:13px;color:#6E655B;display:flex;align-items:center;gap:8px"><i class="icon-sparkles" style="color:#6B3FBF"></i>{{ rhemaHint }}</div>
+</div>
+<div style="padding:12px 20px 34px;border-top:1px solid #EAE3D8;background:#F5F0E8"><button onClick="{{ goDevo }}" style="width:100%;height:56px;border:none;border-radius:18px;background:#6B3FBF;color:#fff;font-size:16px;font-weight:700">Terminé de leer</button></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.devo }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Devocional" style="position:absolute;inset:0;background:#F5F0E8;display:flex;flex-direction:column">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;font-size:15px;font-weight:600">7:14</div>
+<div style="padding:4px 16px 0 8px;display:flex;align-items:center;gap:4px"><button onClick="{{ goRead }}" style="width:44px;height:44px;border:none;background:none;font-size:22px;color:#26211C;display:flex;align-items:center;justify-content:center"><i class="icon-chevron-left"></i></button><span style="font-family:Newsreader,serif;font-size:24px">Mi devocional</span></div>
+<div style="flex:1;overflow-y:auto;padding:12px 18px 12px;display:flex;flex-direction:column;gap:12px">
+<div style="background:#26211C;color:#F5F0E8;border-radius:22px;padding:18px 20px;display:flex;flex-direction:column;gap:8px"><span style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#C9B8F0">Mi palabra rema</span><span style="font-family:Newsreader,serif;font-size:20px;line-height:1.35">“{{ rhema.t }}”</span><span style="font-size:12px;color:#C9B8F0">{{ rhema.ref }}</span></div>
+<label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:14px;font-weight:700">¿Qué aprendí?</span><textarea value="{{ learned }}" onChange="{{ onLearned }}" rows="2" placeholder="Lo que Dios me mostró en este texto…" style="resize:none;border-radius:16px;border:1px solid #E2D9CC;background:#FFFDF9;padding:12px 14px;font-family:Newsreader,serif;font-size:17px;line-height:1.45;color:#26211C;outline:none"></textarea></label>
+<label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:14px;font-weight:700">¿Cómo lo aplico hoy?</span><textarea value="{{ apply }}" onChange="{{ onApply }}" rows="2" placeholder="Algo concreto, para hoy…" style="resize:none;border-radius:16px;border:1px solid #E2D9CC;background:#FFFDF9;padding:12px 14px;font-family:Newsreader,serif;font-size:17px;line-height:1.45;color:#26211C;outline:none"></textarea></label>
+<label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:14px;font-weight:700">Mi oración</span><textarea value="{{ prayer }}" onChange="{{ onPrayer }}" rows="2" placeholder="Señor…" style="resize:none;border-radius:16px;border:1px solid #E2D9CC;background:#FFFDF9;padding:12px 14px;font-family:Newsreader,serif;font-size:17px;line-height:1.45;color:#26211C;outline:none"></textarea></label>
+<button onClick="{{ toggleShareGroup }}" style="border:1px solid #E2D9CC;border-radius:16px;background:#FFFDF9;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;color:#26211C"><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:14px;font-weight:600">Compartir con Alma</span><span style="font-size:12px;color:#6E655B">Solo tu rhema y lo que aprendiste</span></span><span style="width:48px;height:30px;border-radius:15px;background:{{ shareTrack }};padding:3px;box-sizing:border-box;display:flex;justify-content:{{ shareKnob }};flex-shrink:0"><span style="width:24px;height:24px;border-radius:50%;background:#fff"></span></span></button>
+</div>
+<div style="padding:12px 20px 34px"><button onClick="{{ saveDevo }}" style="width:100%;height:56px;border:none;border-radius:18px;background:#6B3FBF;color:#fff;font-size:16px;font-weight:700">Guardar y llevarla conmigo</button></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.commune }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Comunión" style="position:absolute;inset:0;background:#F5F0E8;display:flex;flex-direction:column">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;font-size:15px;font-weight:600">13:02</div>
+<div style="padding:4px 16px 0 8px;display:flex;align-items:center;gap:4px"><button onClick="{{ goHome }}" style="width:44px;height:44px;border:none;background:none;font-size:22px;color:#26211C;display:flex;align-items:center;justify-content:center"><i class="icon-chevron-left"></i></button><span style="font-family:Newsreader,serif;font-size:24px">En comunión</span></div>
+<div style="flex:1;overflow-y:auto;padding:10px 18px 24px;display:flex;flex-direction:column;gap:12px">
+<div style="padding:4px 6px 6px;display:flex;flex-direction:column;gap:8px"><p style="margin:0;font-family:Newsreader,serif;font-style:italic;font-size:22px;line-height:1.35">“Una lechera puede ordeñar vacas para la gloria de Dios.”</p><span style="font-size:13px;color:#6E655B">Atribuido a Martín Lutero · “Orad sin cesar” 1 Tes 5:17</span></div>
+<div style="background:#26211C;color:#F5F0E8;border-radius:22px;padding:18px 20px;display:flex;flex-direction:column;gap:8px"><span style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#C9B8F0">Tu palabra para llevar hoy</span><span style="font-family:Newsreader,serif;font-size:21px;line-height:1.35">“{{ rhema.t }}”</span><span style="font-size:12px;color:#C9B8F0">{{ rhema.ref }}</span></div>
+<div style="background:#FFFDF9;border:1px solid #EAE3D8;border-radius:22px;padding:16px 18px;display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center"><div style="grid-column:1/-1;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6E655B;text-align:left">Oración de respiración</div><div style="border-radius:14px;background:#F1EBE1;padding:12px 8px"><div style="font-size:11px;color:#6E655B">Inhala</div><div style="font-family:Newsreader,serif;font-size:19px">Señor Jesús</div></div><div style="border-radius:14px;background:#EEE7F8;padding:12px 8px"><div style="font-size:11px;color:#5A33A8">Exhala</div><div style="font-family:Newsreader,serif;font-size:19px">dame tu paz</div></div></div>
+<div style="padding:8px 6px 0;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6E655B">Momentos de hoy</div>
+<sc-for list="{{ moments }}" as="m" hint-placeholder-count="3"><button onClick="{{ m.toggle }}" style="border:1px solid #EAE3D8;border-radius:20px;background:#FFFDF9;padding:14px 16px;display:grid;grid-template-columns:1fr 32px;gap:12px;align-items:center;text-align:left;color:#26211C"><span style="display:flex;flex-direction:column;gap:3px"><span style="font-size:12px;font-weight:700;color:#6B3FBF">{{ m.time }} · {{ m.where }}</span><span style="font-size:15px;line-height:1.4">{{ m.text }}</span></span><span style="width:32px;height:32px;border-radius:50%;border:1.5px solid {{ m.border }};background:{{ m.bg }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px"><i class="icon-check"></i></span></button></sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.lock }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Pantalla bloqueada" style="position:absolute;inset:0;background:#2B2540;display:flex;flex-direction:column;color:#fff">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;font-size:15px;font-weight:600"></div>
+<div style="text-align:center;padding-top:30px"><div style="font-size:17px;font-weight:600;opacity:.85">lunes, 2 de noviembre</div><div style="font-family:'DM Sans',sans-serif;font-size:88px;font-weight:600;line-height:1;letter-spacing:-.02em">13:00</div></div>
+<div style="margin-top:auto;padding:0 12px 40px;display:flex;flex-direction:column;gap:8px">
+<button onClick="{{ goCommune }}" style="border:none;border-radius:22px;background:rgba(245,240,232,.92);color:#26211C;padding:14px 16px;display:grid;grid-template-columns:38px 1fr;gap:12px;text-align:left"><img src="images/mana-digital-option3-192.png" alt="" style="width:38px;height:38px;border-radius:10px"></img><span style="display:flex;flex-direction:column;gap:2px"><span style="display:flex;justify-content:space-between;font-size:14px;font-weight:700">Momento de comunión<span style="font-weight:400;color:#6E655B;font-size:13px">ahora</span></span><span style="font-size:14px;line-height:1.4">Mientras comes, da gracias. Y repite: “{{ rhema.short }}”</span></span></button>
+<button onClick="{{ goRead }}" style="border:none;border-radius:22px;background:rgba(245,240,232,.92);color:#26211C;padding:14px 16px;display:grid;grid-template-columns:38px 1fr;gap:12px;text-align:left"><span style="width:38px;height:38px;border-radius:50%;background:#E8B04B;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center">A</span><span style="display:flex;flex-direction:column;gap:2px"><span style="display:flex;justify-content:space-between;font-size:14px;font-weight:700">Ana · Alma<span style="font-weight:400;color:#6E655B;font-size:13px">hace 2 h</span></span><span style="font-size:14px;line-height:1.4">¿Ya leíste hoy? Te espero en Juan 14. Toca para leer.</span></span></button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.examen }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Examen de la noche" style="position:absolute;inset:0;background:#13111C;color:#F3EFE6;display:flex;flex-direction:column;font-family:'DM Sans',sans-serif">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;font-size:15px;font-weight:600">21:00</div>
+<div style="padding:4px 16px 0 8px;display:flex;align-items:center"><button onClick="{{ goHome }}" style="width:44px;height:44px;border:none;background:none;font-size:22px;color:#F3EFE6;display:flex;align-items:center;justify-content:center"><i class="icon-x"></i></button></div>
+<sc-if value="{{ examenOpen }}" hint-placeholder-val="{{ true }}">
+<div style="flex:1;overflow-y:auto;padding:4px 22px 12px;display:flex;flex-direction:column;gap:10px">
+<div style="font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#E8C478;padding:0 4px">Examen del día</div>
+<h2 style="margin:0 0 6px;padding:0 4px;font-family:'Instrument Serif',serif;font-weight:400;font-size:38px;line-height:1.05">Antes de dormir, mira tu día con Él.</h2>
+<sc-for list="{{ checks }}" as="c" hint-placeholder-count="4"><button onClick="{{ c.toggle }}" style="border:1px solid #2C2840;border-radius:20px;background:#1D1A29;padding:14px 16px;display:grid;grid-template-columns:30px 1fr;gap:12px;align-items:start;text-align:left;color:#F3EFE6"><span style="width:28px;height:28px;border-radius:50%;border:1.5px solid {{ c.border }};background:{{ c.bg }};color:#13111C;display:flex;align-items:center;justify-content:center;font-size:15px"><i class="icon-check"></i></span><span style="display:flex;flex-direction:column;gap:4px"><span style="font-size:16px;font-weight:500">{{ c.label }}</span><span style="font-size:14px;color:#A39DB5;line-height:1.4">{{ c.detail }}</span></span></button></sc-for>
+<div style="padding:10px 4px 0;font-size:15px;font-weight:500">¿Cómo te sentiste hoy?</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ feelings }}" as="f" hint-placeholder-count="6"><button onClick="{{ f.pick }}" style="height:40px;border-radius:20px;border:1px solid {{ f.border }};background:{{ f.bg }};color:{{ f.fg }};padding:0 14px;font-size:14px;display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:{{ f.color }}"></span>{{ f.name }}</button></sc-for></div>
+<div style="font-size:13px;color:#A39DB5;padding:2px 4px">{{ tomorrowHint }}</div>
+</div>
+<div style="padding:12px 20px 34px"><button onClick="{{ closeDay }}" style="width:100%;height:56px;border:none;border-radius:28px;background:#E8C478;color:#13111C;font-size:16px;font-weight:600">Cerrar el día</button></div>
+</sc-if>
+<sc-if value="{{ examenClosed }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;padding:0 30px 60px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:16px;animation:fadeUp .6s ease">
+<div style="width:64px;height:64px;border-radius:50%;border:1px solid #E8C478;color:#E8C478;display:flex;align-items:center;justify-content:center;font-size:26px"><i class="icon-moon-star"></i></div>
+<h2 style="margin:0;font-family:'Instrument Serif',serif;font-weight:400;font-size:40px;line-height:1.08">Descansa en Él.</h2>
+<p style="margin:0;font-size:16px;color:#A39DB5;line-height:1.5">“En paz me acostaré, y asimismo dormiré.” Salmos 4:8</p>
+<div style="width:100%;border-radius:20px;background:#1D1A29;border:1px solid #2C2840;padding:16px 18px;text-align:left;display:flex;flex-direction:column;gap:4px;box-sizing:border-box"><span style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#E8C478">Mañana a las 7:00</span><span style="font-family:'Instrument Serif',serif;font-size:22px">{{ tomorrow.title }}</span><span style="font-size:13px;color:#A39DB5">{{ tomorrow.why }}</span></div>
+<button onClick="{{ goGroup }}" style="height:48px;border-radius:24px;border:1px solid #2C2840;background:transparent;color:#F3EFE6;padding:0 22px;font-size:15px">Ver a mi grupo</button>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.group }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Grupo" style="position:absolute;inset:0;background:#F5F0E8;display:flex;flex-direction:column">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;font-size:15px;font-weight:600">9:41</div>
+<div style="padding:0 16px 0 8px"><button onClick="{{ goCommunity }}" style="height:36px;border:none;background:none;color:#6E655B;font-size:14px;font-weight:600;display:flex;align-items:center;gap:4px;padding:0 8px"><i class="icon-chevron-left" style="font-size:18px"></i>Comunidad</button></div>
+<div style="padding:0 24px 4px;display:flex;justify-content:space-between;align-items:flex-end"><div><h2 style="margin:0;font-family:Newsreader,serif;font-weight:400;font-size:34px">Alma</h2><div style="font-size:14px;color:#6E655B;margin-top:2px">Grupo familiar · 6 · Juan, un capítulo diario</div></div><button onClick="{{ goNewGroup }}" aria-label="Nuevo grupo" style="width:44px;height:44px;border-radius:50%;border:1px solid #E2D9CC;background:#FFFDF9;color:#26211C;font-size:19px;display:flex;align-items:center;justify-content:center"><i class="icon-plus"></i></button></div>
+<div style="flex:1;overflow-y:auto;padding:14px 16px 20px;display:flex;flex-direction:column;gap:10px">
+<button onClick="{{ goChapter }}" style="border:none;border-radius:24px;background:#26211C;color:#F5F0E8;padding:20px;display:flex;flex-direction:column;gap:10px;text-align:left"><span style="font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#C9B8F0">Hoy leemos juntos · Día 14 de 21</span><span style="font-family:Newsreader,serif;font-size:28px;line-height:1.05">Juan 14</span><span style="display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%"><span style="font-size:14px;color:#CFC6BA">{{ threadCount }} aportes · pregunta del líder</span><span style="height:36px;border-radius:18px;background:#F5F0E8;color:#26211C;padding:0 14px;font-size:13px;font-weight:700;display:flex;align-items:center">Ver y aportar</span></span></button>
+<button onClick="{{ goPrayers }}" style="border:1px solid #EAE3D8;border-radius:24px;background:#FFFDF9;padding:18px 20px;display:grid;grid-template-columns:44px 1fr auto;gap:14px;align-items:center;text-align:left;color:#26211C"><span style="width:44px;height:44px;border-radius:14px;background:#FBE4EF;color:#BE185D;display:flex;align-items:center;justify-content:center;font-size:20px"><i class="icon-hand-heart"></i></span><span style="display:flex;flex-direction:column;gap:2px"><span style="font-family:Newsreader,serif;font-size:20px">Peticiones y ayuda</span><span style="font-size:13px;color:#6E655B">{{ openPrayers }} abiertas · oren y ayúdense</span></span><i class="icon-chevron-right" style="color:#9C9285"></i></button>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><sc-for list="{{ groupTools }}" as="g" hint-placeholder-count="4"><button onClick="{{ g.go }}" style="border:1px solid #EAE3D8;border-radius:18px;background:#FFFDF9;padding:14px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;color:#26211C"><span style="width:34px;height:34px;border-radius:11px;background:{{ g.soft }};color:{{ g.color }};display:flex;align-items:center;justify-content:center;font-size:16px"><i class="{{ g.icon }}"></i></span><span style="font-size:14px;font-weight:700">{{ g.label }}</span><span style="font-size:12px;color:#6E655B;line-height:1.35">{{ g.sub }}</span></button></sc-for></div>
+<div style="background:#FFFDF9;border:1px solid #EAE3D8;border-radius:22px;display:flex;flex-direction:column">
+<div style="padding:12px 16px 4px;display:grid;grid-template-columns:1fr repeat(3,26px) 70px;gap:6px;font-size:10px;font-weight:700;letter-spacing:.06em;color:#9C9285;text-transform:uppercase;align-items:center"><span>Hoy</span><span style="text-align:center">P</span><span style="text-align:center">C</span><span style="text-align:center">E</span><span></span></div>
+<sc-for list="{{ memberRows }}" as="m" hint-placeholder-count="6"><div style="padding:10px 16px;display:grid;grid-template-columns:1fr repeat(3,26px) 70px;gap:6px;align-items:center;border-top:1px solid #F1EBE1"><span style="display:flex;align-items:center;gap:10px;min-width:0"><span style="width:34px;height:34px;border-radius:50%;background:{{ m.color }};color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">{{ m.i }}</span><span style="display:flex;flex-direction:column;min-width:0"><span style="font-size:14px;font-weight:600">{{ m.name }}</span><span style="font-size:12px;color:#6E655B">{{ m.streak }} días</span></span></span><span style="width:14px;height:14px;border-radius:50%;background:{{ m.p }};justify-self:center"></span><span style="width:14px;height:14px;border-radius:50%;background:{{ m.c }};justify-self:center"></span><span style="width:14px;height:14px;border-radius:50%;background:{{ m.e }};justify-self:center"></span><sc-if value="{{ m.canNudge }}" hint-placeholder-val="{{ false }}"><button onClick="{{ m.nudge }}" style="height:32px;border-radius:16px;border:none;background:{{ m.nbg }};color:{{ m.nfg }};font-size:12px;font-weight:700">{{ m.nlabel }}</button></sc-if><sc-if value="{{ m.noNudge }}" hint-placeholder-val="{{ true }}"><span></span></sc-if></div></sc-for>
+<div style="padding:10px 16px 12px;font-size:11px;color:#9C9285;border-top:1px solid #F1EBE1">P Palabra · C Comunión · E Examen</div>
+</div>
+<div style="padding:8px 6px 0;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6E655B">Lo que Dios les habló</div>
+<sc-for list="{{ feed }}" as="f" hint-placeholder-count="2"><div style="background:#FFFDF9;border:1px solid #EAE3D8;border-radius:22px;padding:16px 18px;display:flex;flex-direction:column;gap:10px"><div style="display:flex;align-items:center;gap:10px"><span style="width:32px;height:32px;border-radius:50%;background:{{ f.color }};color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center">{{ f.i }}</span><span style="font-size:14px;font-weight:600;flex:1">{{ f.name }}</span><span style="font-size:12px;color:#9C9285">{{ f.time }}</span></div><div style="border-left:2px solid #6B3FBF;padding-left:12px;font-family:Newsreader,serif;font-size:18px;line-height:1.35">“{{ f.rhema }}” <span style="font-family:Manrope,sans-serif;font-size:12px;color:#6B3FBF;font-weight:700">{{ f.ref }}</span></div><p style="margin:0;font-size:14px;line-height:1.5;color:#3D362F">{{ f.learned }}</p><div style="display:flex;gap:8px"><button onClick="{{ f.amen }}" style="height:34px;border-radius:17px;border:1px solid {{ f.aborder }};background:{{ f.abg }};color:{{ f.afg }};padding:0 14px;font-size:13px;font-weight:600">Amén · {{ f.amens }}</button><button style="height:34px;border-radius:17px;border:1px solid #E2D9CC;background:transparent;color:#26211C;padding:0 14px;font-size:13px;font-weight:600">Orando por ti</button></div></div></sc-for>
+</div>
+<div style="height:78px;background:#FFFDF9;border-top:1px solid #EAE3D8;display:grid;grid-template-columns:repeat(4,1fr);padding-bottom:10px"><sc-for list="{{ nav }}" as="t" hint-placeholder-count="4"><button onClick="{{ t.go }}" style="border:none;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:{{ t.color }};font-size:11px;font-weight:700"><i class="{{ t.icon }}" style="font-size:22px"></i>{{ t.label }}</button></sc-for></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.plan }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Plan" style="position:absolute;inset:0;background:#F5F0E8;display:flex;flex-direction:column">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;font-size:15px;font-weight:600">9:41</div>
+<div style="padding:8px 24px 4px"><h2 style="margin:0;font-family:Newsreader,serif;font-weight:400;font-size:34px">Mi plan</h2></div>
+<div style="flex:1;overflow-y:auto;padding:14px 16px 20px;display:flex;flex-direction:column;gap:10px">
+<div style="background:#26211C;color:#F5F0E8;border-radius:24px;padding:22px;display:flex;flex-direction:column;gap:12px"><div style="font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#C9B8F0">Con Alma · Día 12 de 21</div><div style="font-family:Newsreader,serif;font-size:28px;line-height:1.1">El Evangelio de Juan</div><div style="height:6px;border-radius:3px;background:#3D362F;overflow:hidden"><div style="width:57%;height:100%;background:#C9B8F0"></div></div></div>
+<div style="background:#FFFDF9;border:1px solid #EAE3D8;border-radius:22px;display:flex;flex-direction:column"><sc-for list="{{ planDays }}" as="d" hint-placeholder-count="5"><div style="padding:14px 16px;display:grid;grid-template-columns:28px 1fr auto;gap:12px;align-items:center;border-bottom:1px solid #F1EBE1"><span style="width:26px;height:26px;border-radius:50%;background:{{ d.bg }};border:1.5px solid {{ d.border }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;box-sizing:border-box"><i class="{{ d.icon }}"></i></span><span style="display:flex;flex-direction:column"><span style="font-size:12px;color:#6E655B">Día {{ d.n }}</span><span style="font-family:Newsreader,serif;font-size:18px">{{ d.title }}</span></span><span style="font-size:12px;font-weight:700;color:#6B3FBF">{{ d.tag }}</span></div></sc-for></div>
+<div style="padding:8px 6px 0;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6E655B">O deja que te guíe cómo te sientes</div>
+<div style="background:#FFFDF9;border:1px solid #EAE3D8;border-radius:22px;padding:16px 18px;font-size:14px;line-height:1.5;color:#3D362F">Si no sigues un plan, cada mañana tu lectura sale de lo que marcaste en el examen de la noche anterior.</div>
+</div>
+<div style="height:78px;background:#FFFDF9;border-top:1px solid #EAE3D8;display:grid;grid-template-columns:repeat(4,1fr);padding-bottom:10px"><sc-for list="{{ nav }}" as="t" hint-placeholder-count="4"><button onClick="{{ t.go }}" style="border:none;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:{{ t.color }};font-size:11px;font-weight:700"><i class="{{ t.icon }}" style="font-size:22px"></i>{{ t.label }}</button></sc-for></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.diary }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Diario" style="position:absolute;inset:0;background:#F5F0E8;display:flex;flex-direction:column">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;font-size:15px;font-weight:600">9:41</div>
+<div style="padding:8px 24px 4px"><h2 style="margin:0;font-family:Newsreader,serif;font-weight:400;font-size:34px">Mi diario</h2><div style="font-size:14px;color:#6E655B;margin-top:2px">Lo que Dios te ha ido hablando</div></div>
+<div style="flex:1;overflow-y:auto;padding:14px 16px 20px;display:flex;flex-direction:column;gap:10px">
+<sc-for list="{{ diary }}" as="d" hint-placeholder-count="2"><div style="background:#FFFDF9;border:1px solid #EAE3D8;border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:10px"><div style="display:flex;justify-content:space-between;font-size:12px;color:#6E655B"><span style="font-weight:700;color:#6B3FBF;letter-spacing:.04em;text-transform:uppercase">{{ d.ref }}</span><span>{{ d.date }}</span></div><p style="margin:0;font-family:Newsreader,serif;font-size:19px;line-height:1.35">“{{ d.rhema }}”</p><div style="display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.45;color:#3D362F"><span><b style="color:#26211C">Aprendí:</b> {{ d.learned }}</span><span><b style="color:#26211C">Aplico:</b> {{ d.apply }}</span></div></div></sc-for>
+</div>
+<div style="height:78px;background:#FFFDF9;border-top:1px solid #EAE3D8;display:grid;grid-template-columns:repeat(4,1fr);padding-bottom:10px"><sc-for list="{{ nav }}" as="t" hint-placeholder-count="4"><button onClick="{{ t.go }}" style="border:none;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:{{ t.color }};font-size:11px;font-weight:700"><i class="{{ t.icon }}" style="font-size:22px"></i>{{ t.label }}</button></sc-for></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.signup }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Registro con teléfono" style="position:absolute;inset:0;background:#F5F0E8;display:flex;flex-direction:column">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;font-size:15px;font-weight:600">9:41</div>
+<div style="flex:1;padding:40px 26px 0;display:flex;flex-direction:column;gap:14px">
+<img src="images/mana-digital-option3-192.png" alt="" style="width:56px;height:56px;border-radius:14px"></img>
+<h2 style="margin:12px 0 0;font-family:Newsreader,serif;font-weight:400;font-size:36px;line-height:1.08">{{ sign.title }}</h2>
+<p style="margin:0;font-size:15px;line-height:1.5;color:#6E655B">{{ sign.sub }}</p>
+<sc-if value="{{ sign.isPhone }}" hint-placeholder-val="{{ true }}">
+<div style="margin-top:14px;display:grid;grid-template-columns:88px 1fr;gap:8px"><div style="height:56px;border-radius:16px;border:1px solid #E2D9CC;background:#FFFDF9;display:flex;align-items:center;justify-content:center;gap:6px;font-size:16px;font-weight:600">+51<i class="icon-chevron-down" style="font-size:14px;color:#9C9285"></i></div><input value="{{ phone }}" onChange="{{ onPhone }}" inputmode="tel" placeholder="987 654 321" style="height:56px;border-radius:16px;border:1px solid #E2D9CC;background:#FFFDF9;padding:0 16px;font-size:18px;letter-spacing:.04em;color:#26211C;outline:none"></input></div>
+<div style="font-size:13px;color:#6E655B;line-height:1.5">Así tus hermanos te encuentran por tu número y pueden sumarte a su grupo.</div>
+</sc-if>
+<sc-if value="{{ sign.isCode }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:14px;display:grid;grid-template-columns:repeat(6,1fr);gap:8px"><sc-for list="{{ otp }}" as="o" hint-placeholder-count="6"><span style="height:58px;border-radius:14px;border:1.5px solid {{ o.border }};background:#FFFDF9;display:flex;align-items:center;justify-content:center;font-family:Newsreader,serif;font-size:26px">{{ o.d }}</span></sc-for></div>
+<div style="font-size:13px;color:#6E655B">Te enviamos un código por SMS · <span style="color:#6B3FBF;font-weight:600">Reenviar</span></div>
+</sc-if>
+<sc-if value="{{ sign.isInvite }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:14px;background:#26211C;color:#F5F0E8;border-radius:24px;padding:22px;display:flex;flex-direction:column;gap:12px"><div style="font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#C9B8F0">Te están esperando</div><div style="font-family:Newsreader,serif;font-size:28px">Alma</div><div style="font-size:14px;color:#CFC6BA;line-height:1.5">Grupo familiar · Harle (líder) te invitó a leer Juan, un capítulo diario.</div><div style="display:flex"><sc-for list="{{ avatars }}" as="m" hint-placeholder-count="6"><span style="width:34px;height:34px;border-radius:50%;background:{{ m.color }};border:2px solid #26211C;margin-right:-8px;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center">{{ m.i }}</span></sc-for></div></div>
+</sc-if>
+</div>
+<div style="padding:16px 20px 34px"><button onClick="{{ signNext }}" style="width:100%;height:56px;border:none;border-radius:18px;background:#6B3FBF;color:#fff;font-size:16px;font-weight:700">{{ sign.cta }}</button></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.newgroup }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Crear grupo" style="position:absolute;inset:0;background:#F5F0E8;display:flex;flex-direction:column">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;font-size:15px;font-weight:600">9:41</div>
+<div style="padding:4px 16px 0 8px;display:flex;align-items:center;gap:4px"><button onClick="{{ goGroup }}" style="width:44px;height:44px;border:none;background:none;font-size:22px;color:#26211C;display:flex;align-items:center;justify-content:center"><i class="icon-x"></i></button><span style="font-family:Newsreader,serif;font-size:24px">Nuevo grupo</span><span style="margin-left:auto;font-size:13px;color:#6E655B;padding-right:8px">1 de 2</span></div>
+<div style="flex:1;overflow-y:auto;padding:14px 18px 12px;display:flex;flex-direction:column;gap:14px">
+<label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:700;color:#6E655B">Nombre del grupo</span><input value="{{ groupName }}" onChange="{{ onGroupName }}" style="height:56px;border-radius:16px;border:1px solid #E2D9CC;background:#FFFDF9;padding:0 16px;font-family:Newsreader,serif;font-size:22px;color:#26211C;outline:none"></input></label>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><sc-for list="{{ groupTypes }}" as="g" hint-placeholder-count="4"><button onClick="{{ g.pick }}" style="height:38px;border-radius:19px;border:1px solid {{ g.border }};background:{{ g.bg }};color:{{ g.fg }};padding:0 14px;font-size:14px;font-weight:600">{{ g.label }}</button></sc-for></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding-top:4px"><span style="font-size:13px;font-weight:700;color:#6E655B">Miembros · {{ invitedCount }} + tú (líder)</span><span style="font-size:13px;color:#6B3FBF;font-weight:600">De tus contactos</span></div>
+<div style="background:#FFFDF9;border:1px solid #EAE3D8;border-radius:20px;display:flex;flex-direction:column">
+<sc-for list="{{ contacts }}" as="c" hint-placeholder-count="6"><button onClick="{{ c.toggle }}" style="border:none;border-bottom:1px solid #F1EBE1;background:none;padding:12px 16px;display:grid;grid-template-columns:36px 1fr 28px;gap:12px;align-items:center;text-align:left;color:#26211C"><span style="width:36px;height:36px;border-radius:50%;background:{{ c.color }};color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center">{{ c.i }}</span><span style="display:flex;flex-direction:column"><span style="font-size:15px;font-weight:600">{{ c.name }}</span><span style="font-size:13px;color:#6E655B">{{ c.phone }} · {{ c.status }}</span></span><span style="width:26px;height:26px;border-radius:50%;border:1.5px solid {{ c.border }};background:{{ c.bg }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;box-sizing:border-box"><i class="icon-check"></i></span></button></sc-for>
+</div>
+<button style="height:50px;border-radius:16px;border:1px dashed #C9BFB0;background:transparent;color:#26211C;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px"><i class="icon-message-circle" style="color:#1F9D55"></i>Invitar por WhatsApp a quien no tiene la app</button>
+</div>
+<div style="padding:12px 20px 34px"><button onClick="{{ goGroupPlan }}" style="width:100%;height:56px;border:none;border-radius:18px;background:#6B3FBF;color:#fff;font-size:16px;font-weight:700">Siguiente: ¿qué leerán?</button></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.groupplan }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Lectura del grupo" style="position:absolute;inset:0;background:#F5F0E8;display:flex;flex-direction:column">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;font-size:15px;font-weight:600">9:41</div>
+<div style="padding:4px 16px 0 8px;display:flex;align-items:center;gap:4px"><button onClick="{{ goNewGroup }}" style="width:44px;height:44px;border:none;background:none;font-size:22px;color:#26211C;display:flex;align-items:center;justify-content:center"><i class="icon-chevron-left"></i></button><span style="font-family:Newsreader,serif;font-size:24px">¿Qué leerá {{ groupName }}?</span><span style="margin-left:auto;font-size:13px;color:#6E655B;padding-right:8px">2 de 2</span></div>
+<div style="flex:1;overflow-y:auto;padding:14px 18px 12px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:700;color:#6E655B">Libro</span><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><sc-for list="{{ books }}" as="b" hint-placeholder-count="6"><button onClick="{{ b.pick }}" style="height:64px;border-radius:16px;border:1.5px solid {{ b.border }};background:{{ b.bg }};padding:0 14px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;color:#26211C;text-align:left"><span style="font-family:Newsreader,serif;font-size:19px">{{ b.name }}</span><span style="font-size:12px;color:#6E655B">{{ b.caps }} capítulos</span></button></sc-for></div></div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:700;color:#6E655B">Ritmo</span><div style="display:grid;grid-template-columns:repeat(3,1fr);background:#EAE3D8;border-radius:14px;padding:4px"><sc-for list="{{ paces }}" as="p" hint-placeholder-count="3"><button onClick="{{ p.pick }}" style="height:40px;border:none;border-radius:11px;background:{{ p.bg }};color:{{ p.fg }};font-size:13px;font-weight:600;box-shadow:{{ p.shadow }}">{{ p.label }}</button></sc-for></div></div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:700;color:#6E655B">Duración</span><div style="display:grid;grid-template-columns:repeat(3,1fr);background:#EAE3D8;border-radius:14px;padding:4px"><sc-for list="{{ periods }}" as="p" hint-placeholder-count="3"><button onClick="{{ p.pick }}" style="height:40px;border:none;border-radius:11px;background:{{ p.bg }};color:{{ p.fg }};font-size:13px;font-weight:600;box-shadow:{{ p.shadow }}">{{ p.label }}</button></sc-for></div></div>
+<div style="background:#FFFDF9;border:1px solid #EAE3D8;border-radius:20px;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px"><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:600">Pregunta del día</span><span style="font-size:13px;color:#6E655B">El líder la propone; todos responden</span></span><i class="icon-chevron-right" style="color:#9C9285"></i></div>
+<div style="background:#26211C;color:#F5F0E8;border-radius:22px;padding:18px 20px;display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#C9B8F0">Resumen</span><span style="font-family:Newsreader,serif;font-size:22px;line-height:1.25">{{ planSummary }}</span></div>
+</div>
+<div style="padding:12px 20px 34px"><button onClick="{{ startGroup }}" style="width:100%;height:56px;border:none;border-radius:18px;background:#6B3FBF;color:#fff;font-size:16px;font-weight:700">Empezar con {{ groupName }}</button></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.chapter }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Capítulo del grupo" style="position:absolute;inset:0;background:#F5F0E8;display:flex;flex-direction:column">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;font-size:15px;font-weight:600">20:14</div>
+<div style="padding:4px 16px 0 8px;display:flex;align-items:center;gap:4px"><button onClick="{{ goGroup }}" style="width:44px;height:44px;border:none;background:none;font-size:22px;color:#26211C;display:flex;align-items:center;justify-content:center"><i class="icon-chevron-left"></i></button><div style="display:flex;flex-direction:column"><span style="font-size:12px;color:#6E655B">Alma · Día 14 de 21</span><span style="font-family:Newsreader,serif;font-size:22px;line-height:1.1">Juan 14</span></div><span style="margin-left:auto;font-size:13px;color:#6E655B;padding-right:8px">{{ threadCount }} aportes</span></div>
+<div style="flex:1;overflow-y:auto;padding:12px 16px 12px;display:flex;flex-direction:column;gap:10px">
+<div style="background:#26211C;color:#F5F0E8;border-radius:22px;padding:16px 18px;display:flex;flex-direction:column;gap:8px"><span style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#C9B8F0"><i class="icon-pin" style="font-size:14px"></i>Pregunta del líder</span><span style="font-family:Newsreader,serif;font-size:20px;line-height:1.3">Jesús dice “no se turbe vuestro corazón”. ¿Qué te está turbando hoy, y qué te dice Él sobre eso?</span></div>
+<sc-for list="{{ thread }}" as="p" hint-placeholder-count="3"><div style="background:#FFFDF9;border:1px solid #EAE3D8;border-radius:22px;padding:16px 16px 12px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:10px"><span style="width:32px;height:32px;border-radius:50%;background:{{ p.color }};color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center">{{ p.i }}</span><span style="font-size:14px;font-weight:600;flex:1">{{ p.name }}</span><span style="font-size:12px;color:#9C9285">{{ p.time }}</span></div>
+<div style="border-left:2px solid #6B3FBF;padding-left:12px;font-family:Newsreader,serif;font-size:17px;line-height:1.35">“{{ p.rhema }}” <span style="font-family:Manrope,sans-serif;font-size:12px;color:#6B3FBF;font-weight:700">{{ p.ref }}</span></div>
+<p style="margin:0;font-size:14px;line-height:1.5;color:#3D362F">{{ p.text }}</p>
+<div style="display:flex;gap:6px;flex-wrap:wrap"><button onClick="{{ p.amen }}" style="height:32px;border-radius:16px;border:1px solid {{ p.aborder }};background:{{ p.abg }};color:{{ p.afg }};padding:0 12px;font-size:12px;font-weight:700">Amén · {{ p.amens }}</button><button onClick="{{ p.reply }}" style="height:32px;border-radius:16px;border:1px solid #E2D9CC;background:transparent;color:#26211C;padding:0 12px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:5px"><i class="icon-message-circle" style="font-size:13px"></i>Animar</button></div>
+<sc-for list="{{ p.comments }}" as="c" hint-placeholder-count="0"><div style="display:grid;grid-template-columns:24px 1fr;gap:8px;align-items:start;padding-top:2px"><span style="width:24px;height:24px;border-radius:50%;background:{{ c.color }};color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center">{{ c.i }}</span><span style="font-size:13px;line-height:1.45;color:#3D362F;background:#F5F0E8;border-radius:12px;padding:8px 10px"><b style="color:#26211C">{{ c.name }}</b> {{ c.text }}</span></div></sc-for>
+<sc-if value="{{ p.replying }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:8px"><div style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{ quickReplies }}" as="q" hint-placeholder-count="3"><button onClick="{{ q.use }}" style="height:30px;border-radius:15px;border:1px solid #E2D9CC;background:#F5F0E8;padding:0 10px;font-size:12px;color:#3D362F">{{ q.t }}</button></sc-for></div><div style="display:flex;gap:6px"><input value="{{ replyText }}" onChange="{{ onReply }}" placeholder="Escribe un aliento…" style="flex:1;height:42px;border-radius:21px;border:1px solid #E2D9CC;background:#FFFDF9;padding:0 14px;font-size:14px;color:#26211C;outline:none"></input><button onClick="{{ sendReply }}" aria-label="Enviar" style="width:42px;height:42px;border-radius:50%;border:none;background:#6B3FBF;color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center"><i class="icon-send"></i></button></div></div></sc-if>
+</div></sc-for>
+<div style="padding:6px 6px 0;font-size:12px;color:#9C9285;line-height:1.5;text-align:center">“Perseveraban en la doctrina de los apóstoles, en la comunión unos con otros, en el partimiento del pan y en las oraciones.” Hechos 2:42</div>
+</div>
+<sc-if value="{{ canCompose }}" hint-placeholder-val="{{ true }}"><div style="padding:12px 20px 34px;border-top:1px solid #EAE3D8"><button onClick="{{ goCompose }}" style="width:100%;height:56px;border:none;border-radius:18px;background:#6B3FBF;color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px"><i class="icon-pen-line"></i>Aportar lo que aprendí</button></div></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.compose }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Aportar al grupo" style="position:absolute;inset:0;background:#F5F0E8;display:flex;flex-direction:column">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;font-size:15px;font-weight:600">20:16</div>
+<div style="padding:4px 16px 0 8px;display:flex;align-items:center;gap:4px"><button onClick="{{ goChapter }}" style="width:44px;height:44px;border:none;background:none;font-size:22px;color:#26211C;display:flex;align-items:center;justify-content:center"><i class="icon-x"></i></button><span style="font-family:Newsreader,serif;font-size:24px">Aportar a Alma</span></div>
+<div style="flex:1;overflow-y:auto;padding:12px 18px;display:flex;flex-direction:column;gap:12px">
+<div style="font-size:13px;font-weight:700;color:#6E655B">El versículo que te habló</div>
+<div style="display:flex;flex-direction:column;gap:6px"><sc-for list="{{ composeVerses }}" as="v" hint-placeholder-count="5"><button onClick="{{ v.pick }}" style="border:1.5px solid {{ v.border }};border-radius:14px;background:{{ v.bg }};padding:10px 12px;text-align:left;font-family:Newsreader,serif;font-size:16px;line-height:1.4;color:#26211C"><sup style="font-family:Manrope,sans-serif;font-size:10px;font-weight:700;color:#6B3FBF;margin-right:4px">{{ v.n }}</sup>{{ v.t }}</button></sc-for></div>
+<label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;font-weight:700;color:#6E655B">Lo que aprendí y cómo lo aplico</span><textarea value="{{ composeText }}" onChange="{{ onCompose }}" rows="4" placeholder="Comparte con sencillez. A alguien le puede hacer falta hoy." style="resize:none;border-radius:16px;border:1px solid #E2D9CC;background:#FFFDF9;padding:12px 14px;font-family:Newsreader,serif;font-size:18px;line-height:1.45;color:#26211C;outline:none"></textarea></label>
+</div>
+<div style="padding:12px 20px 34px"><button onClick="{{ postCompose }}" style="width:100%;height:56px;border:none;border-radius:18px;background:{{ postBg }};color:#fff;font-size:16px;font-weight:700">Compartir con el grupo</button></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.prayers }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Peticiones y ayuda" style="position:absolute;inset:0;background:#F5F0E8;display:flex;flex-direction:column">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;font-size:15px;font-weight:600">12:30</div>
+<div style="padding:4px 16px 0 8px;display:flex;align-items:center;gap:4px"><button onClick="{{ goGroup }}" style="width:44px;height:44px;border:none;background:none;font-size:22px;color:#26211C;display:flex;align-items:center;justify-content:center"><i class="icon-chevron-left"></i></button><div style="display:flex;flex-direction:column"><span style="font-size:12px;color:#6E655B">Alma</span><span style="font-family:Newsreader,serif;font-size:22px;line-height:1.1">Peticiones y ayuda</span></div></div>
+<div style="flex:1;overflow-y:auto;padding:12px 16px 12px;display:flex;flex-direction:column;gap:10px">
+<div style="padding:2px 6px 4px;font-size:13px;color:#6E655B;line-height:1.5;font-family:Newsreader,serif;font-style:italic">“Tenían en común todas las cosas… y lo repartían a todos según la necesidad de cada uno.” Hechos 2:44–45</div>
+<div style="display:flex;gap:6px;overflow-x:auto;padding:0 2px"><sc-for list="{{ prayerFilters }}" as="f" hint-placeholder-count="5"><button onClick="{{ f.pick }}" style="height:34px;border-radius:17px;border:1px solid {{ f.border }};background:{{ f.bg }};color:{{ f.fg }};padding:0 14px;font-size:13px;font-weight:600;white-space:nowrap">{{ f.label }}</button></sc-for></div>
+<sc-for list="{{ prayers }}" as="p" hint-placeholder-count="3"><div style="background:#FFFDF9;border:1px solid #EAE3D8;border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:10px"><span style="width:34px;height:34px;border-radius:50%;background:{{ p.color }};color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center">{{ p.i }}</span><span style="flex:1;display:flex;flex-direction:column"><span style="font-size:14px;font-weight:600">{{ p.name }}</span><span style="font-size:12px;color:#9C9285">{{ p.time }}</span></span><span style="height:26px;border-radius:13px;background:{{ p.tagBg }};color:{{ p.tagFg }};padding:0 10px;font-size:11px;font-weight:700;display:flex;align-items:center">{{ p.kind }}</span></div>
+<p style="margin:0;font-size:15px;line-height:1.5;color:#26211C">{{ p.text }}</p>
+<sc-if value="{{ p.hasHelp }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:6px"><sc-for list="{{ p.helps }}" as="h" hint-placeholder-count="1"><div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#0F5F43;background:#E3F4EC;border-radius:12px;padding:8px 10px"><i class="icon-hand-helping" style="font-size:14px"></i><span><b>{{ h.name }}</b> {{ h.text }}</span></div></sc-for></div></sc-if>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px"><button onClick="{{ p.pray }}" style="height:40px;border-radius:14px;border:1px solid {{ p.pborder }};background:{{ p.pbg }};color:{{ p.pfg }};font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:5px"><i class="icon-hand-heart" style="font-size:14px"></i>{{ p.prayLabel }}</button><button onClick="{{ p.encourage }}" style="height:40px;border-radius:14px;border:1px solid #E2D9CC;background:transparent;color:#26211C;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:5px"><i class="icon-message-circle" style="font-size:14px"></i>Aliento</button><button onClick="{{ p.help }}" style="height:40px;border-radius:14px;border:none;background:#E3F4EC;color:#0F5F43;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:5px"><i class="icon-hand-helping" style="font-size:14px"></i>Puedo ayudar</button></div>
+<sc-for list="{{ p.comments }}" as="c" hint-placeholder-count="0"><div style="font-size:13px;line-height:1.45;color:#3D362F;background:#F5F0E8;border-radius:12px;padding:8px 10px"><b style="color:#26211C">{{ c.name }}</b> {{ c.text }}</div></sc-for>
+</div></sc-for>
+</div>
+<div style="padding:12px 20px 34px;border-top:1px solid #EAE3D8"><button onClick="{{ goNewPrayer }}" style="width:100%;height:56px;border:none;border-radius:18px;background:#26211C;color:#F5F0E8;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px"><i class="icon-plus"></i>Compartir una petición</button></div>
+
+<sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;background:rgba(38,33,28,.5);display:flex;align-items:flex-end">
+<div style="width:100%;background:#F5F0E8;border-radius:28px 28px 0 0;padding:12px 20px 34px;display:flex;flex-direction:column;gap:14px;animation:fadeUp .25s ease">
+<div style="width:40px;height:5px;border-radius:3px;background:#D9D0C2;align-self:center"></div>
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:Newsreader,serif;font-size:24px">{{ sheet.title }}</span><button onClick="{{ closeSheet }}" aria-label="Cerrar" style="width:40px;height:40px;border:none;background:none;font-size:20px;color:#26211C;display:flex;align-items:center;justify-content:center"><i class="icon-x"></i></button></div>
+<sc-if value="{{ sheet.isHelp }}" hint-placeholder-val="{{ true }}"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><sc-for list="{{ helpOpts }}" as="h" hint-placeholder-count="6"><button onClick="{{ h.pick }}" style="height:60px;border-radius:16px;border:1.5px solid {{ h.border }};background:{{ h.bg }};display:flex;align-items:center;gap:10px;padding:0 14px;font-size:14px;font-weight:600;color:#26211C"><i class="{{ h.icon }}" style="font-size:18px;color:#0F7A55"></i>{{ h.label }}</button></sc-for></div></sc-if>
+<sc-if value="{{ sheet.isWord }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:6px"><sc-for list="{{ wordOpts }}" as="w" hint-placeholder-count="3"><button onClick="{{ w.pick }}" style="border:1.5px solid {{ w.border }};border-radius:14px;background:{{ w.bg }};padding:10px 12px;text-align:left;font-family:Newsreader,serif;font-size:16px;line-height:1.35;color:#26211C">{{ w.t }}</button></sc-for></div></sc-if>
+<input value="{{ sheetText }}" onChange="{{ onSheetText }}" placeholder="{{ sheet.placeholder }}" style="height:50px;border-radius:16px;border:1px solid #E2D9CC;background:#FFFDF9;padding:0 16px;font-size:15px;color:#26211C;outline:none"></input>
+<sc-if value="{{ sheet.isHelp }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px;color:#6E655B;line-height:1.5;display:flex;gap:6px"><i class="icon-lock" style="font-size:13px"></i>Solo {{ sheet.who }} verá tu ofrecimiento. Coordinan en privado.</div></sc-if>
+<button onClick="{{ sendSheet }}" style="height:56px;border:none;border-radius:18px;background:{{ sheet.btn }};color:#fff;font-size:16px;font-weight:700">{{ sheet.cta }}</button>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.newprayer }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Nueva petición" style="position:absolute;inset:0;background:#F5F0E8;display:flex;flex-direction:column">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;font-size:15px;font-weight:600">12:34</div>
+<div style="padding:4px 16px 0 8px;display:flex;align-items:center;gap:4px"><button onClick="{{ goPrayers }}" style="width:44px;height:44px;border:none;background:none;font-size:22px;color:#26211C;display:flex;align-items:center;justify-content:center"><i class="icon-x"></i></button><span style="font-family:Newsreader,serif;font-size:24px">Nueva petición</span></div>
+<div style="flex:1;overflow-y:auto;padding:12px 18px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:700;color:#6E655B">¿Qué estás pasando?</span><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><sc-for list="{{ kinds }}" as="k" hint-placeholder-count="4"><button onClick="{{ k.pick }}" style="height:54px;border-radius:16px;border:1.5px solid {{ k.border }};background:{{ k.bg }};display:flex;align-items:center;gap:10px;padding:0 14px;font-size:14px;font-weight:600;color:#26211C"><i class="{{ k.icon }}" style="font-size:18px;color:{{ k.color }}"></i>{{ k.label }}</button></sc-for></div></div>
+<textarea value="{{ newPrayerText }}" onChange="{{ onNewPrayer }}" rows="4" placeholder="Cuéntalo con confianza. Estás entre hermanos." style="resize:none;border-radius:18px;border:1px solid #E2D9CC;background:#FFFDF9;padding:14px 16px;font-size:16px;line-height:1.5;color:#26211C;outline:none"></textarea>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:700;color:#6E655B">¿Qué necesitas?</span><div style="display:flex;gap:8px;flex-wrap:wrap"><sc-for list="{{ needs }}" as="n" hint-placeholder-count="3"><button onClick="{{ n.toggle }}" style="height:38px;border-radius:19px;border:1px solid {{ n.border }};background:{{ n.bg }};color:{{ n.fg }};padding:0 14px;font-size:14px;font-weight:600">{{ n.label }}</button></sc-for></div></div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:700;color:#6E655B">¿Quién lo ve?</span><div style="display:grid;grid-template-columns:repeat(3,1fr);background:#EAE3D8;border-radius:14px;padding:4px"><sc-for list="{{ privacy }}" as="p" hint-placeholder-count="3"><button onClick="{{ p.pick }}" style="height:40px;border:none;border-radius:11px;background:{{ p.bg }};color:{{ p.fg }};font-size:13px;font-weight:600;box-shadow:{{ p.shadow }}">{{ p.label }}</button></sc-for></div></div>
+</div>
+<div style="padding:12px 20px 34px"><button onClick="{{ postPrayer }}" style="width:100%;height:56px;border:none;border-radius:18px;background:{{ postPrayerBg }};color:#fff;font-size:16px;font-weight:700">Pedir oración y apoyo</button></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.me }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Yo · Menú" style="position:absolute;inset:0;background:#F5F0E8;display:flex;flex-direction:column">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;font-size:15px;font-weight:600">9:41</div>
+<div style="flex:1;overflow-y:auto;padding:8px 16px 20px;display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:center;gap:14px;padding:8px 8px 12px"><span style="width:56px;height:56px;border-radius:50%;background:#6B3FBF;color:#fff;font-size:22px;font-weight:700;display:flex;align-items:center;justify-content:center">H</span><span style="display:flex;flex-direction:column;gap:2px"><span style="font-family:Newsreader,serif;font-size:26px;line-height:1.1">Harle</span><span style="font-size:13px;color:#6E655B">+51 987 654 321 · 12 días seguidos</span></span></div>
+<sc-for list="{{ menu }}" as="sec" hint-placeholder-count="3"><div style="display:flex;flex-direction:column;gap:6px"><div style="padding:10px 8px 0;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6E655B">{{ sec.title }}</div><div style="background:#FFFDF9;border:1px solid #EAE3D8;border-radius:20px;display:flex;flex-direction:column;overflow:hidden"><sc-for list="{{ sec.items }}" as="it" hint-placeholder-count="3"><button onClick="{{ it.go }}" style="border:none;border-bottom:1px solid #F1EBE1;background:none;min-height:60px;padding:10px 16px;display:grid;grid-template-columns:36px 1fr auto;gap:12px;align-items:center;text-align:left;color:{{ it.fg }}"><span style="width:36px;height:36px;border-radius:12px;background:{{ it.soft }};color:{{ it.color }};display:flex;align-items:center;justify-content:center;font-size:17px"><i class="{{ it.icon }}"></i></span><span style="display:flex;flex-direction:column;gap:1px"><span style="font-size:15px;font-weight:600">{{ it.label }}</span><span style="font-size:12px;color:#6E655B">{{ it.sub }}</span></span><i class="icon-chevron-right" style="color:#C9BFB0;font-size:17px"></i></button></sc-for></div></div></sc-for>
+</div>
+<div style="height:78px;background:#FFFDF9;border-top:1px solid #EAE3D8;display:grid;grid-template-columns:repeat(4,1fr);padding-bottom:10px"><sc-for list="{{ nav }}" as="t" hint-placeholder-count="4"><button onClick="{{ t.go }}" style="border:none;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:{{ t.color }};font-size:11px;font-weight:700"><i class="{{ t.icon }}" style="font-size:22px"></i>{{ t.label }}</button></sc-for></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.community }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Comunidad" style="position:absolute;inset:0;background:#F5F0E8;display:flex;flex-direction:column">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;font-size:15px;font-weight:600">9:41</div>
+<div style="padding:8px 24px 4px;display:flex;justify-content:space-between;align-items:flex-end"><div><h2 style="margin:0;font-family:Newsreader,serif;font-weight:400;font-size:34px">Comunidad</h2><div style="font-size:14px;color:#6E655B;margin-top:2px">Unánimes, aunque estemos lejos</div></div><button onClick="{{ goNewGroup }}" aria-label="Crear grupo" style="height:40px;border-radius:20px;border:none;background:#26211C;color:#F5F0E8;padding:0 14px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px"><i class="icon-plus"></i>Crear</button></div>
+<div style="flex:1;overflow-y:auto;padding:14px 16px 20px;display:flex;flex-direction:column;gap:10px">
+<div style="padding:2px 6px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6E655B">Mis grupos</div>
+<sc-for list="{{ myGroups }}" as="g" hint-placeholder-count="3"><button onClick="{{ g.go }}" style="border:1px solid #EAE3D8;border-radius:22px;background:#FFFDF9;padding:16px;display:grid;grid-template-columns:48px 1fr auto;gap:14px;align-items:center;text-align:left;color:#26211C"><span style="width:48px;height:48px;border-radius:16px;background:{{ g.color }};color:#fff;font-family:Newsreader,serif;font-size:22px;display:flex;align-items:center;justify-content:center">{{ g.i }}</span><span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-family:Newsreader,serif;font-size:20px">{{ g.name }}</span><span style="font-size:12px;color:#6E655B">{{ g.meta }}</span><span style="font-size:12px;color:#6B3FBF;font-weight:600">{{ g.now }}</span></span><sc-if value="{{ g.badge }}" hint-placeholder-val="{{ false }}"><span style="min-width:22px;height:22px;border-radius:11px;background:#BE185D;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 6px">{{ g.badge }}</span></sc-if></button></sc-for>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-top:6px">
+<button onClick="{{ goExplore }}" style="border:none;border-radius:22px;background:#26211C;color:#F5F0E8;padding:18px;display:flex;flex-direction:column;gap:10px;text-align:left;min-height:140px"><i class="icon-compass" style="font-size:24px;color:#C9B8F0"></i><span style="font-family:Newsreader,serif;font-size:21px;line-height:1.1">Explorar comunidades</span><span style="font-size:12px;color:#CFC6BA">Por ciudad, iglesia o interés</span></button>
+<button onClick="{{ goCity }}" style="border:none;border-radius:22px;background:#0F5F43;color:#F0FAF5;padding:18px;display:flex;flex-direction:column;gap:10px;text-align:left;min-height:140px"><i class="icon-map-pin" style="font-size:24px;color:#9FE0C2"></i><span style="font-family:Newsreader,serif;font-size:21px;line-height:1.1">Red por ciudad</span><span style="font-size:12px;color:#C7EBDA">Pide oración o una visita donde lo necesites</span></button>
+</div>
+<div style="padding:6px 6px 0;font-size:13px;color:#8A8075;line-height:1.5;font-family:Newsreader,serif;font-style:italic">“Perseveraban unánimes cada día… partiendo el pan en las casas.” Hechos 2:46</div>
+</div>
+<div style="height:78px;background:#FFFDF9;border-top:1px solid #EAE3D8;display:grid;grid-template-columns:repeat(4,1fr);padding-bottom:10px"><sc-for list="{{ nav }}" as="t" hint-placeholder-count="4"><button onClick="{{ t.go }}" style="border:none;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:{{ t.color }};font-size:11px;font-weight:700"><i class="{{ t.icon }}" style="font-size:22px"></i>{{ t.label }}</button></sc-for></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.explore }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Explorar comunidades" style="position:absolute;inset:0;background:#F5F0E8;display:flex;flex-direction:column">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;font-size:15px;font-weight:600">9:41</div>
+<div style="padding:4px 16px 0 8px;display:flex;align-items:center;gap:4px"><button onClick="{{ goCommunity }}" style="width:44px;height:44px;border:none;background:none;font-size:22px;color:#26211C;display:flex;align-items:center;justify-content:center"><i class="icon-chevron-left"></i></button><span style="font-family:Newsreader,serif;font-size:24px">Explorar</span></div>
+<div style="padding:8px 16px 0;display:flex;flex-direction:column;gap:10px">
+<div style="height:48px;border-radius:24px;border:1px solid #E2D9CC;background:#FFFDF9;display:flex;align-items:center;gap:10px;padding:0 16px;color:#9C9285;font-size:15px"><i class="icon-search"></i>Iglesia, ciudad o tema…</div>
+<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px"><sc-for list="{{ cityChips }}" as="c" hint-placeholder-count="6"><button onClick="{{ c.pick }}" style="height:36px;border-radius:18px;border:1px solid {{ c.border }};background:{{ c.bg }};color:{{ c.fg }};padding:0 14px;font-size:13px;font-weight:600;white-space:nowrap;flex-shrink:0">{{ c.label }}</button></sc-for></div>
+</div>
+<div style="flex:1;overflow-y:auto;padding:12px 16px 20px;display:flex;flex-direction:column;gap:10px">
+<div style="font-size:13px;color:#6E655B;padding:0 6px">{{ exploreCount }}</div>
+<sc-for list="{{ communities }}" as="c" hint-placeholder-count="4"><div style="background:#FFFDF9;border:1px solid #EAE3D8;border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:12px">
+<div style="display:grid;grid-template-columns:48px 1fr;gap:12px;align-items:center"><span style="width:48px;height:48px;border-radius:16px;background:{{ c.color }};color:#fff;font-family:Newsreader,serif;font-size:22px;display:flex;align-items:center;justify-content:center">{{ c.i }}</span><span style="display:flex;flex-direction:column;gap:2px"><span style="font-family:Newsreader,serif;font-size:19px;line-height:1.15">{{ c.name }}</span><span style="font-size:12px;color:#6E655B;display:flex;align-items:center;gap:4px"><i class="icon-map-pin" style="font-size:12px"></i>{{ c.city }} · {{ c.type }} · {{ c.members }} miembros</span></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><span style="font-size:13px;color:#3D362F"><span style="color:#6B3FBF;font-weight:700">Leyendo:</span> {{ c.reading }}</span><button onClick="{{ c.join }}" style="height:36px;border-radius:18px;border:none;background:{{ c.jbg }};color:{{ c.jfg }};padding:0 14px;font-size:13px;font-weight:700;white-space:nowrap">{{ c.jlabel }}</button></div>
+</div></sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.city }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Red por ciudad" style="position:absolute;inset:0;background:#F5F0E8;display:flex;flex-direction:column">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;font-size:15px;font-weight:600">9:41</div>
+<div style="padding:4px 16px 0 8px;display:flex;align-items:center;gap:4px"><button onClick="{{ goCommunity }}" style="width:44px;height:44px;border:none;background:none;font-size:22px;color:#26211C;display:flex;align-items:center;justify-content:center"><i class="icon-chevron-left"></i></button><span style="font-family:Newsreader,serif;font-size:24px">Red por ciudad</span></div>
+<div style="padding:8px 16px 0;display:flex;gap:6px;overflow-x:auto"><sc-for list="{{ cityTabs }}" as="c" hint-placeholder-count="6"><button onClick="{{ c.pick }}" style="height:36px;border-radius:18px;border:1px solid {{ c.border }};background:{{ c.bg }};color:{{ c.fg }};padding:0 14px;font-size:13px;font-weight:600;white-space:nowrap;flex-shrink:0">{{ c.label }}</button></sc-for></div>
+<div style="flex:1;overflow-y:auto;padding:12px 16px 12px;display:flex;flex-direction:column;gap:10px">
+<div style="background:#0F5F43;color:#F0FAF5;border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:12px"><span style="font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#9FE0C2">Hermanos en {{ cityName }}</span><span style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><span style="display:flex;flex-direction:column"><span style="font-family:Newsreader,serif;font-size:30px;line-height:1">{{ cityStats.people }}</span><span style="font-size:12px;color:#C7EBDA">personas</span></span><span style="display:flex;flex-direction:column"><span style="font-family:Newsreader,serif;font-size:30px;line-height:1">{{ cityStats.groups }}</span><span style="font-size:12px;color:#C7EBDA">comunidades</span></span><span style="display:flex;flex-direction:column"><span style="font-family:Newsreader,serif;font-size:30px;line-height:1">{{ cityStats.reqs }}</span><span style="font-size:12px;color:#C7EBDA">peticiones</span></span></span></div>
+<sc-for list="{{ cityReqs }}" as="r" hint-placeholder-count="3"><div style="background:#FFFDF9;border:1px solid #EAE3D8;border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:10px"><span style="width:34px;height:34px;border-radius:50%;background:{{ r.color }};color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center">{{ r.i }}</span><span style="flex:1;display:flex;flex-direction:column"><span style="font-size:14px;font-weight:600">{{ r.name }}</span><span style="font-size:12px;color:#9C9285">desde {{ r.from }} · {{ r.time }}</span></span><span style="height:26px;border-radius:13px;background:{{ r.tagBg }};color:{{ r.tagFg }};padding:0 10px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px"><i class="{{ r.icon }}" style="font-size:12px"></i>{{ r.kind }}</span></div>
+<p style="margin:0;font-size:15px;line-height:1.5">{{ r.text }}</p>
+<sc-if value="{{ r.hasStatus }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px;color:#0F5F43;background:#E3F4EC;border-radius:12px;padding:8px 10px;display:flex;gap:8px;align-items:center"><i class="icon-shield-check" style="font-size:14px"></i>{{ r.status }}</div></sc-if>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><button onClick="{{ r.pray }}" style="height:40px;border-radius:14px;border:1px solid {{ r.pborder }};background:{{ r.pbg }};color:{{ r.pfg }};font-size:13px;font-weight:700">{{ r.prayLabel }}</button><button onClick="{{ r.offer }}" style="height:40px;border-radius:14px;border:none;background:{{ r.obg }};color:{{ r.ofg }};font-size:13px;font-weight:700">{{ r.offerLabel }}</button></div>
+</div></sc-for>
+</div>
+<div style="padding:12px 20px 34px;border-top:1px solid #EAE3D8"><button onClick="{{ goCityRequest }}" style="width:100%;height:56px;border:none;border-radius:18px;background:#0F5F43;color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px"><i class="icon-map-pin"></i>Pedir apoyo en una ciudad</button></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.cityrequest }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Pedir apoyo en una ciudad" style="position:absolute;inset:0;background:#F5F0E8;display:flex;flex-direction:column">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;font-size:15px;font-weight:600">9:41</div>
+<div style="padding:4px 16px 0 8px;display:flex;align-items:center;gap:4px"><button onClick="{{ goCity }}" style="width:44px;height:44px;border:none;background:none;font-size:22px;color:#26211C;display:flex;align-items:center;justify-content:center"><i class="icon-x"></i></button><span style="font-family:Newsreader,serif;font-size:24px">Pedir apoyo</span></div>
+<div style="flex:1;overflow-y:auto;padding:12px 18px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:700;color:#6E655B">¿En qué ciudad?</span><div style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{ reqCities }}" as="c" hint-placeholder-count="6"><button onClick="{{ c.pick }}" style="height:38px;border-radius:19px;border:1px solid {{ c.border }};background:{{ c.bg }};color:{{ c.fg }};padding:0 14px;font-size:14px;font-weight:600">{{ c.label }}</button></sc-for></div></div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:700;color:#6E655B">¿Qué necesitas?</span><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><sc-for list="{{ reqKinds }}" as="k" hint-placeholder-count="3"><button onClick="{{ k.pick }}" style="height:72px;border-radius:16px;border:1.5px solid {{ k.border }};background:{{ k.bg }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;color:#26211C"><i class="{{ k.icon }}" style="font-size:20px;color:#0F7A55"></i>{{ k.label }}</button></sc-for></div></div>
+<textarea value="{{ reqText }}" onChange="{{ onReqText }}" rows="4" placeholder="{{ reqPlaceholder }}" style="resize:none;border-radius:18px;border:1px solid #E2D9CC;background:#FFFDF9;padding:14px 16px;font-size:16px;line-height:1.5;color:#26211C;outline:none"></textarea>
+<div style="background:#E3F4EC;border-radius:18px;padding:14px 16px;display:flex;gap:10px;font-size:13px;line-height:1.5;color:#0F5F43"><i class="icon-shield-check" style="font-size:18px;flex-shrink:0"></i><span>Llega a hermanos de comunidades verificadas en {{ reqCityName }}. Las visitas se coordinan con un líder; nunca publiques direcciones.</span></div>
+</div>
+<div style="padding:12px 20px 34px"><button onClick="{{ postCityReq }}" style="width:100%;height:56px;border:none;border-radius:18px;background:{{ reqBtnBg }};color:#fff;font-size:16px;font-weight:700">Enviar a la red de {{ reqCityName }}</button></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.welcome }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Bienvenida" style="position:absolute;inset:0;background:{{ wel.bg }};color:{{ wel.ink }};display:flex;flex-direction:column">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:600">9:41<button onClick="{{ skipWelcome }}" style="border:none;background:none;color:{{ wel.muted }};font-size:14px;font-weight:600">Saltar</button></div>
+<div style="flex:1;padding:40px 28px 0;display:flex;flex-direction:column;gap:18px;animation:fadeUp .4s ease">
+<div style="font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:{{ wel.accent }}">{{ wel.kicker }}</div>
+<h2 style="margin:0;font-family:Newsreader,serif;font-weight:400;font-size:40px;line-height:1.05;text-wrap:pretty">{{ wel.title }}</h2>
+<p style="margin:0;font-size:16px;line-height:1.55;color:{{ wel.muted }}">{{ wel.sub }}</p>
+<div style="display:flex;flex-direction:column;gap:10px;margin-top:8px"><sc-for list="{{ wel.rows }}" as="r" hint-placeholder-count="3"><button onClick="{{ r.pick }}" style="border:1.5px solid {{ r.border }};border-radius:20px;background:{{ r.bg }};padding:14px 16px;display:grid;grid-template-columns:40px 1fr;gap:14px;align-items:center;text-align:left;color:{{ wel.ink }}"><span style="width:40px;height:40px;border-radius:50%;background:{{ r.soft }};color:{{ r.color }};display:flex;align-items:center;justify-content:center;font-size:18px"><i class="{{ r.icon }}"></i></span><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:700">{{ r.t }}</span><span style="font-size:13px;color:{{ wel.muted }};line-height:1.4">{{ r.d }}</span></span></button></sc-for></div>
+</div>
+<div style="padding:16px 20px 34px;display:flex;flex-direction:column;gap:16px;align-items:center"><div style="display:flex;gap:6px"><sc-for list="{{ welDots }}" as="d" hint-placeholder-count="4"><span style="width:{{ d.w }};height:6px;border-radius:3px;background:{{ d.bg }}"></span></sc-for></div><button onClick="{{ welNext }}" style="width:100%;height:56px;border:none;border-radius:18px;background:{{ wel.btn }};color:{{ wel.btnInk }};font-size:16px;font-weight:700">{{ wel.cta }}</button></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.leader }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Panel del líder" style="position:absolute;inset:0;background:#F5F0E8;display:flex;flex-direction:column">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;font-size:15px;font-weight:600">9:41</div>
+<div style="padding:4px 16px 0 8px;display:flex;align-items:center;gap:4px"><button onClick="{{ goGroup }}" style="width:44px;height:44px;border:none;background:none;font-size:22px;color:#26211C;display:flex;align-items:center;justify-content:center"><i class="icon-chevron-left"></i></button><div style="display:flex;flex-direction:column"><span style="font-size:12px;color:#6E655B">Alma · solo tú ves esto</span><span style="font-family:Newsreader,serif;font-size:22px;line-height:1.1">Panel del líder</span></div></div>
+<div style="flex:1;overflow-y:auto;padding:12px 16px 20px;display:flex;flex-direction:column;gap:10px">
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><sc-for list="{{ leaderStats }}" as="k" hint-placeholder-count="3"><div style="background:#FFFDF9;border:1px solid #EAE3D8;border-radius:18px;padding:14px 12px;display:flex;flex-direction:column;gap:2px"><span style="font-family:Newsreader,serif;font-size:28px;line-height:1">{{ k.v }}</span><span style="font-size:12px;color:#6E655B;line-height:1.3">{{ k.l }}</span></div></sc-for></div>
+<div style="padding:8px 6px 0;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6E655B">Necesitan ánimo</div>
+<sc-for list="{{ careList }}" as="c" hint-placeholder-count="2"><div style="background:#FFFDF9;border:1px solid #EAE3D8;border-radius:20px;padding:14px 16px;display:grid;grid-template-columns:36px 1fr auto;gap:12px;align-items:center"><span style="width:36px;height:36px;border-radius:50%;background:{{ c.color }};color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center">{{ c.i }}</span><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:14px;font-weight:600">{{ c.name }}</span><span style="font-size:12px;color:#6E655B">{{ c.why }}</span></span><button onClick="{{ c.act }}" style="height:34px;border-radius:17px;border:none;background:{{ c.bg }};color:{{ c.fg }};padding:0 12px;font-size:12px;font-weight:700">{{ c.label }}</button></div></sc-for>
+<div style="padding:8px 6px 0;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6E655B">Pregunta de mañana · Juan 15</div>
+<div style="background:#FFFDF9;border:1px solid #EAE3D8;border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:10px"><textarea value="{{ nextQ }}" onChange="{{ onNextQ }}" rows="2" style="resize:none;border:none;background:transparent;font-family:Newsreader,serif;font-size:18px;line-height:1.4;color:#26211C;outline:none;padding:0"></textarea><div style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{ qSuggest }}" as="q" hint-placeholder-count="2"><button onClick="{{ q.use }}" style="height:30px;border-radius:15px;border:1px solid #E2D9CC;background:#F5F0E8;padding:0 10px;font-size:12px;color:#3D362F">{{ q.t }}</button></sc-for></div><button onClick="{{ saveQ }}" style="height:42px;border-radius:14px;border:none;background:#26211C;color:#F5F0E8;font-size:14px;font-weight:700">Programar para las 6:00</button></div>
+<div style="padding:8px 6px 0;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6E655B">Solicitudes para unirse</div>
+<sc-for list="{{ joinReqs }}" as="j" hint-placeholder-count="1"><div style="background:#FFFDF9;border:1px solid #EAE3D8;border-radius:20px;padding:14px 16px;display:flex;flex-direction:column;gap:10px"><div style="display:grid;grid-template-columns:36px 1fr;gap:12px;align-items:center"><span style="width:36px;height:36px;border-radius:50%;background:#6B7280;color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center">J</span><span style="display:flex;flex-direction:column"><span style="font-size:14px;font-weight:600">{{ j.name }}</span><span style="font-size:12px;color:#6E655B">{{ j.why }}</span></span></div><sc-if value="{{ j.pending }}" hint-placeholder-val="{{ true }}"><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><button onClick="{{ j.reject }}" style="height:38px;border-radius:12px;border:1px solid #E2D9CC;background:transparent;font-size:13px;font-weight:700;color:#26211C">Ahora no</button><button onClick="{{ j.accept }}" style="height:38px;border-radius:12px;border:none;background:#6B3FBF;font-size:13px;font-weight:700;color:#fff">Aceptar</button></div></sc-if><sc-if value="{{ j.done }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px;color:#0F7A55;font-weight:600">{{ j.result }}</div></sc-if></div></sc-for>
+<button onClick="{{ goSafety }}" style="border:1px solid #F5C2BD;border-radius:20px;background:#FDF1EF;padding:14px 16px;display:grid;grid-template-columns:36px 1fr auto;gap:12px;align-items:center;text-align:left;color:#26211C"><span style="width:36px;height:36px;border-radius:12px;background:#FDECEA;color:#B42318;display:flex;align-items:center;justify-content:center;font-size:17px"><i class="icon-shield-alert"></i></span><span style="display:flex;flex-direction:column"><span style="font-size:14px;font-weight:700">Cuidado y seguridad</span><span style="font-size:12px;color:#6E655B">{{ reportsLabel }}</span></span><i class="icon-chevron-right" style="color:#9C9285"></i></button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.safety }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Cuidado y seguridad" style="position:absolute;inset:0;background:#F5F0E8;display:flex;flex-direction:column">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;font-size:15px;font-weight:600">9:41</div>
+<div style="padding:4px 16px 0 8px;display:flex;align-items:center;gap:4px"><button onClick="{{ goLeader }}" style="width:44px;height:44px;border:none;background:none;font-size:22px;color:#26211C;display:flex;align-items:center;justify-content:center"><i class="icon-chevron-left"></i></button><span style="font-family:Newsreader,serif;font-size:24px">Cuidado y seguridad</span></div>
+<div style="flex:1;overflow-y:auto;padding:12px 16px 20px;display:flex;flex-direction:column;gap:10px">
+<div style="background:#E3F4EC;border-radius:20px;padding:16px;display:grid;grid-template-columns:40px 1fr;gap:12px;align-items:center;color:#0F5F43"><span style="width:40px;height:40px;border-radius:50%;background:#0F7A55;color:#fff;display:flex;align-items:center;justify-content:center;font-size:19px"><i class="icon-badge-check"></i></span><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:700">Líder verificado</span><span style="font-size:13px;line-height:1.4">Avalado por Iglesia Vida Nueva. Solo grupos verificados pueden coordinar visitas.</span></span></div>
+<div style="padding:8px 6px 0;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6E655B">Reglas del grupo</div>
+<div style="background:#FFFDF9;border:1px solid #EAE3D8;border-radius:20px;display:flex;flex-direction:column"><sc-for list="{{ rules }}" as="r" hint-placeholder-count="4"><button onClick="{{ r.toggle }}" style="border:none;border-bottom:1px solid #F1EBE1;background:none;padding:14px 16px;display:grid;grid-template-columns:1fr 48px;gap:12px;align-items:center;text-align:left;color:#26211C"><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:14px;font-weight:600">{{ r.t }}</span><span style="font-size:12px;color:#6E655B;line-height:1.35">{{ r.d }}</span></span><span style="width:48px;height:30px;border-radius:15px;background:{{ r.track }};padding:3px;box-sizing:border-box;display:flex;justify-content:{{ r.knob }}"><span style="width:24px;height:24px;border-radius:50%;background:#fff"></span></span></button></sc-for></div>
+<div style="padding:8px 6px 0;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6E655B">Reportes</div>
+<sc-for list="{{ reports }}" as="r" hint-placeholder-count="1"><div style="background:#FFFDF9;border:1px solid #EAE3D8;border-radius:20px;padding:14px 16px;display:flex;flex-direction:column;gap:10px"><div style="display:flex;justify-content:space-between;gap:10px;font-size:12px;color:#6E655B"><span style="font-weight:700;color:#B42318">{{ r.tag }}</span><span>{{ r.time }}</span></div><p style="margin:0;font-size:14px;line-height:1.5">{{ r.text }}</p><sc-if value="{{ r.open }}" hint-placeholder-val="{{ true }}"><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><button onClick="{{ r.keep }}" style="height:38px;border-radius:12px;border:1px solid #E2D9CC;background:transparent;font-size:13px;font-weight:700;color:#26211C">Está bien</button><button onClick="{{ r.remove }}" style="height:38px;border-radius:12px;border:none;background:#B42318;font-size:13px;font-weight:700;color:#fff">Eliminar</button></div></sc-if><sc-if value="{{ r.closed }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px;color:#0F7A55;font-weight:600">{{ r.result }}</div></sc-if></div></sc-for>
+<div style="padding:4px 6px;font-size:12px;color:#8A8075;line-height:1.5">Cualquier miembro puede reportar un mensaje desde ⋯. Los pedidos de dinero fuera de la app se ocultan solos.</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.testimonies }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Dios respondió" style="position:absolute;inset:0;background:#F5F0E8;display:flex;flex-direction:column">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;font-size:15px;font-weight:600">9:41</div>
+<div style="padding:4px 16px 0 8px;display:flex;align-items:center;gap:4px"><button onClick="{{ goGroup }}" style="width:44px;height:44px;border:none;background:none;font-size:22px;color:#26211C;display:flex;align-items:center;justify-content:center"><i class="icon-chevron-left"></i></button><div style="display:flex;flex-direction:column"><span style="font-size:12px;color:#6E655B">Alma · {{ testiCount }} testimonios</span><span style="font-family:Newsreader,serif;font-size:22px;line-height:1.1">Dios respondió</span></div></div>
+<div style="flex:1;overflow-y:auto;padding:12px 16px 20px;display:flex;flex-direction:column;gap:10px">
+<div style="background:#26211C;color:#F5F0E8;border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:10px"><span style="font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#E8C478">¿Dios respondió una petición tuya?</span><textarea value="{{ testiText }}" onChange="{{ onTesti }}" rows="2" placeholder="Cuéntalo para que todos den gracias…" style="resize:none;border-radius:14px;border:1px solid #4A4239;background:#322B25;padding:10px 12px;font-family:Newsreader,serif;font-size:17px;line-height:1.4;color:#F5F0E8;outline:none"></textarea><button onClick="{{ postTesti }}" style="height:44px;border-radius:14px;border:none;background:#E8C478;color:#26211C;font-size:14px;font-weight:700">Compartir testimonio</button></div>
+<sc-for list="{{ testimonies }}" as="t" hint-placeholder-count="3"><div style="background:#FFFDF9;border:1px solid #EAE3D8;border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:10px"><span style="width:34px;height:34px;border-radius:50%;background:{{ t.color }};color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center">{{ t.i }}</span><span style="flex:1;display:flex;flex-direction:column"><span style="font-size:14px;font-weight:600">{{ t.name }}</span><span style="font-size:12px;color:#9C9285">{{ t.time }}</span></span><span style="height:26px;border-radius:13px;background:#FBF1DC;color:#8A5A12;padding:0 10px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px"><i class="icon-sparkles" style="font-size:12px"></i>Respondida</span></div>
+<div style="font-size:13px;color:#6E655B;line-height:1.45;border-left:2px solid #E2D9CC;padding-left:10px">Pidió: {{ t.asked }}</div>
+<p style="margin:0;font-family:Newsreader,serif;font-size:19px;line-height:1.4">{{ t.answer }}</p>
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;color:#6E655B">{{ t.prayed }} oraron por esto</span><button onClick="{{ t.thank }}" style="height:34px;border-radius:17px;border:1px solid {{ t.border }};background:{{ t.bg }};color:{{ t.fg }};padding:0 14px;font-size:13px;font-weight:700">Gloria a Dios · {{ t.thanks }}</button></div>
+</div></sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.weekly }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Resumen semanal" style="position:absolute;inset:0;background:#EAE3D8;display:flex;flex-direction:column">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;font-size:15px;font-weight:600">Dom 9:00</div>
+<div style="padding:4px 16px 0 8px;display:flex;align-items:center;gap:4px"><button onClick="{{ goGroup }}" style="width:44px;height:44px;border:none;background:none;font-size:22px;color:#26211C;display:flex;align-items:center;justify-content:center"><i class="icon-chevron-left"></i></button><span style="font-family:Newsreader,serif;font-size:24px">Resumen de la semana</span></div>
+<div style="flex:1;overflow-y:auto;padding:12px 16px 12px">
+<div style="background:#26211C;color:#F5F0E8;border-radius:28px;padding:24px 22px;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#C9B8F0">Alma · semana 2</span><span style="font-family:Newsreader,serif;font-size:32px;line-height:1.05">Juan 8 al 14</span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px"><sc-for list="{{ weekStats }}" as="k" hint-placeholder-count="4"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-family:Newsreader,serif;font-size:36px;line-height:1;color:{{ k.c }}">{{ k.v }}</span><span style="font-size:12px;color:#CFC6BA">{{ k.l }}</span></div></sc-for></div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#C9B8F0">Constancia</span><sc-for list="{{ weekMembers }}" as="m" hint-placeholder-count="6"><div style="display:grid;grid-template-columns:64px 1fr;gap:10px;align-items:center"><span style="font-size:13px">{{ m.name }}</span><span style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px"><sc-for list="{{ m.days }}" as="d" hint-placeholder-count="7"><span style="height:10px;border-radius:3px;background:{{ d.bg }}"></span></sc-for></span></div></sc-for></div>
+<div style="border-top:1px solid #3D362F;padding-top:14px;display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#C9B8F0">El versículo que más nos habló</span><span style="font-family:Newsreader,serif;font-size:21px;line-height:1.3">“La paz os dejo, mi paz os doy.”</span><span style="font-size:12px;color:#CFC6BA">Juan 14:27 · marcado por 4 de 6</span></div>
+</div>
+</div>
+<div style="padding:12px 20px 34px;display:grid;grid-template-columns:1fr 1fr;gap:10px"><button onClick="{{ doShareWeek }}" style="height:54px;border:none;border-radius:18px;background:#1F9D55;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px"><i class="icon-message-circle"></i>Al grupo</button><button onClick="{{ goMeeting }}" style="height:54px;border:none;border-radius:18px;background:#26211C;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px"><i class="icon-cast"></i>En la reunión</button></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is.meeting }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Modo reunión" style="position:absolute;inset:0;background:#13111C;color:#F3EFE6;display:flex;flex-direction:column;font-family:'DM Sans',sans-serif">
+<div style="height:50px;padding:0 32px;display:flex;align-items:center;font-size:15px;font-weight:600">Jue 20:00</div>
+<div style="padding:4px 16px 0 8px;display:flex;align-items:center;justify-content:space-between"><button onClick="{{ goGroup }}" style="width:44px;height:44px;border:none;background:none;font-size:22px;color:#F3EFE6;display:flex;align-items:center;justify-content:center"><i class="icon-x"></i></button><span style="height:32px;border-radius:16px;border:1px solid #2C2840;padding:0 12px;font-size:12px;color:#A39DB5;display:flex;align-items:center;gap:6px"><i class="icon-cast" style="font-size:14px;color:#E8C478"></i>Proyectando en TV</span></div>
+<div style="padding:16px 24px 0;display:grid;grid-template-columns:repeat(5,1fr);gap:4px"><sc-for list="{{ meetBars }}" as="b" hint-placeholder-count="5"><span style="height:3px;border-radius:2px;background:{{ b.bg }}"></span></sc-for></div>
+<div style="flex:1;padding:24px 28px;display:flex;flex-direction:column;justify-content:center;gap:18px;animation:fadeUp .4s ease">
+<span style="font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#E8C478">{{ meet.kicker }}</span>
+<h2 style="margin:0;font-family:'Instrument Serif',serif;font-weight:400;font-size:{{ meet.size }};line-height:1.1;text-wrap:pretty">{{ meet.title }}</h2>
+<span style="font-size:16px;color:#A39DB5;line-height:1.5">{{ meet.sub }}</span>
+</div>
+<div style="padding:0 20px 34px;display:grid;grid-template-columns:1fr 1fr;gap:10px"><button onClick="{{ meetPrev }}" style="height:56px;border-radius:28px;border:1px solid #2C2840;background:transparent;color:#F3EFE6;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px"><i class="icon-chevron-left"></i>Anterior</button><button onClick="{{ meetNext }}" style="height:56px;border-radius:28px;border:none;background:#E8C478;color:#13111C;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px">{{ meetNextLabel }}<i class="icon-chevron-right"></i></button></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;left:20px;right:20px;bottom:100px;background:#26211C;color:#F5F0E8;border-radius:16px;padding:14px 18px;font-size:14px;text-align:center;animation:fadeUp .3s ease">{{ toast }}</div></sc-if>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const PASSAGES = {
+  plan: { title: 'Juan 14', ref: 'Juan 14', why: 'Plan “El Evangelio de Juan” · Día 12 de 21 · con Alma', verses: [
+    [1, 'No se turbe vuestro corazón; creéis en Dios, creed también en mí.'],
+    [6, 'Jesús le dijo: Yo soy el camino, y la verdad, y la vida; nadie viene al Padre, sino por mí.'],
+    [18, 'No os dejaré huérfanos; vendré a vosotros.'],
+    [23, 'El que me ama, mi palabra guardará; y mi Padre le amará, y vendremos a él, y haremos morada con él.'],
+    [27, 'La paz os dejo, mi paz os doy; yo no os la doy como el mundo la da. No se turbe vuestro corazón, ni tenga miedo.']
+  ]},
+  ayer: { title: 'Filipenses 4', ref: 'Filipenses 4', why: 'Anoche dijiste que te sentiste ansioso. Esta lectura es para ti.', verses: [
+    [4, 'Regocijaos en el Señor siempre. Otra vez digo: ¡Regocijaos!'],
+    [5, 'Vuestra gentileza sea conocida de todos los hombres. El Señor está cerca.'],
+    [6, 'Por nada estéis afanosos, sino sean conocidas vuestras peticiones delante de Dios en toda oración y ruego, con acción de gracias.'],
+    [7, 'Y la paz de Dios, que sobrepasa todo entendimiento, guardará vuestros corazones y vuestros pensamientos en Cristo Jesús.']
+  ]}
+};
+const TREE = [
+  ['Hoy', 'icon-sun', 'pestaña 1', [['home','Inicio del día'],['read','Mañana · Lectura'],['devo','Mañana · Devocional'],['lock','Día · Avisos en el celular'],['commune','Día · Comunión'],['examen','Noche · Examen']]],
+  ['Leer', 'icon-book-open', 'pestaña 2', [['plan','Mi plan de lectura']]],
+  ['Comunidad', 'icon-users', 'pestaña 3', [['community','Inicio de Comunidad'],['explore','Explorar comunidades'],['city','Red por ciudad'],['cityrequest','Pedir apoyo en una ciudad'],['group','Alma (tu grupo)'],['chapter','Capítulo del día'],['compose','Aportar lo aprendido'],['prayers','Peticiones y ayuda'],['newprayer','Nueva petición']]],
+  ['Yo · Menú', 'icon-circle-user', 'pestaña 4', [['me','Menú principal'],['diary','Mi diario'],['newgroup','Crear grupo'],['groupplan','Elegir lectura del grupo']]],
+  ['Herramientas del grupo', 'icon-wrench', 'desde Alma', [['leader','Panel del líder'],['safety','Cuidado y seguridad'],['testimonies','Dios respondió'],['weekly','Resumen semanal'],['meeting','Modo reunión']]],
+  ['Antes de entrar', 'icon-smartphone', '', [['welcome','Bienvenida (primer uso)'],['signup','Registro con teléfono']]]
+];
+const TAB_OF = {}; TREE.slice(0, 4).forEach(([, , , items], t) => items.forEach(([k]) => TAB_OF[k] = t));
+const CITIES = ['Lima', 'Arequipa', 'Cusco', 'Trujillo', 'Piura', 'Huancayo'];
+const COMMS = [
+  ['Jóvenes Vida Nueva', 'J', '#7C4FD6', 'Arequipa', 'Iglesia', 86, 'Hechos 5', 'Abierto'],
+  ['Mujeres de Fe Cusco', 'M', '#DB2777', 'Cusco', 'Ministerio', 41, 'Rut 2', 'Con aprobación'],
+  ['Universitarios en Cristo', 'U', '#3B82F6', 'Lima', 'Interés', 230, 'Romanos 8', 'Abierto'],
+  ['Matrimonios Firmes', 'F', '#B7791F', 'Trujillo', 'Ministerio', 34, 'Efesios 5', 'Con aprobación'],
+  ['Iglesia Bethel Piura', 'B', '#0F7A55', 'Piura', 'Iglesia', 152, 'Salmos 23', 'Abierto'],
+  ['Hombres de Valor', 'H', '#EF4444', 'Lima', 'Ministerio', 58, 'Proverbios 2', 'Abierto'],
+  ['Red de Oración Andina', 'R', '#14B8A6', 'Huancayo', 'Oración', 410, 'Santiago 5', 'Abierto']
+];
+const CITY_STATS = { Lima: [2480, 96, 14], Arequipa: [312, 14, 6], Cusco: [205, 9, 3], Trujillo: [268, 11, 4], Piura: [190, 8, 2], Huancayo: [144, 6, 2] };
+const CITY_REQS = [
+  ['Carmen', 'C', '#E8B04B', 'Lima', 'Arequipa', 'Hace 1 h', 'Visita', 'Mi papá está internado en el Hospital Honorio Delgado y no puedo viajar hasta el sábado. ¿Algún hermano de Arequipa podría visitarlo y orar con él?', 'La líder de Jóvenes Vida Nueva está coordinando · 2 se ofrecieron'],
+  ['Andrés', 'A', '#3B82F6', 'Cusco', 'Arequipa', 'Hoy', 'Oración', 'Mi hermana empieza a trabajar en Arequipa el lunes y no conoce a nadie. Oren por ella y si hay una iglesia cerca de Cayma, me encantaría que la reciban.', ''],
+  ['Rosa', 'R', '#14B8A6', 'Arequipa', 'Arequipa', 'Ayer', 'Ayuda', 'Una familia de mi barrio perdió su casa en un incendio. Estamos juntando ropa y víveres para el viernes.', '9 personas ayudando'],
+  ['Miguel', 'M', '#EF4444', 'Trujillo', 'Lima', 'Hace 3 h', 'Visita', 'Mi abuelita vive sola en San Juan de Lurigancho. ¿Alguien podría visitarla esta semana? Le hace falta compañía.', ''],
+  ['Lucía', 'L', '#DB2777', 'Piura', 'Cusco', 'Hoy', 'Oración', 'Viajo a Cusco por una cirugía de mi hijo. Pido oración y, si alguien conoce un lugar sencillo para hospedarnos, se lo agradezco.', '']
+];
+const REQ_KINDS = [['Oración', 'icon-hand-heart'], ['Visita', 'icon-door-open'], ['Ayuda', 'icon-hand-helping']];
+['leader','safety','testimonies','weekly','meeting'].forEach(k => TAB_OF[k] = 2);
+const SCREENS = [['welcome','Bienvenida'],['leader','Panel del líder'],['safety','Seguridad'],['testimonies','Testimonios'],['weekly','Resumen semanal'],['meeting','Modo reunión'],['community','Comunidad'],['explore','Explorar'],['city','Red por ciudad'],['cityrequest','Pedir apoyo en ciudad'],['me','Yo · Menú'],['signup','Registro con teléfono'],['home','Hoy'],['read','Mañana · Lectura'],['devo','Mañana · Devocional'],['lock','Durante el día · Avisos'],['commune','Durante el día · Comunión'],['examen','Noche · Examen'],['group','Grupo Alma'],['chapter','Grupo · Capítulo del día'],['compose','Grupo · Aportar'],['prayers','Grupo · Peticiones y ayuda'],['newprayer','Grupo · Nueva petición'],['newgroup','Crear grupo'],['groupplan','Crear grupo · Lectura'],['plan','Plan'],['diary','Diario']];
+const CONTACTS = [['Ana Quispe','A','#E8B04B','987 112 340',1],['Luis Huamán','L','#3B82F6','965 448 201',1],['María Torres','M','#14B8A6','944 870 115',1],['Pedro Rojas','P','#EF4444','912 003 778',0],['Sofía Mendoza','S','#DB2777','999 561 024',0],['Jorge Díaz','J','#6B7280','981 230 655',0]];
+const BOOKS = [['San Juan',21],['Hechos',28],['Salmos',150],['Proverbios',31],['Romanos',16],['Marcos',16]];
+const QUICK = ['Amén, me hacía falta leer esto.','Qué bueno lo que compartes.','Oro por eso que te turba.'];
+const KINDS = [['Espiritual','icon-flame','#7C4FD6'],['Salud','icon-heart-pulse','#DB2777'],['Familia','icon-house','#B7791F'],['Material','icon-package','#0F7A55']];
+const HELPS = [['Yape / Plin','icon-smartphone'],['Comida','icon-utensils'],['Ropa o cosas','icon-shirt'],['Movilidad','icon-car'],['Una visita','icon-door-open'],['Otra ayuda','icon-hand-helping']];
+const WORDS = ['“No temas, porque yo estoy contigo.” Isaías 41:10','“Echa sobre Jehová tu carga, y él te sustentará.” Salmos 55:22','“Mi Dios suplirá todo lo que os falta.” Filipenses 4:19'];
+const KIND_STYLE = { Espiritual: ['#EEE7F8','#5A33A8'], Salud: ['#FBE4EF','#BE185D'], Familia: ['#FBF1DC','#8A5A12'], Material: ['#E3F4EC','#0F5F43'] };
+const MOMENTS = [['10:30','En el trabajo','Ofrécele lo que estás haciendo. Hazlo para Él.'],['13:00','Al comer','Da gracias. Repite tu palabra de hoy.'],['17:30','En el camino','Ora por alguien de tu grupo.']];
+const FEEL = [['Agradecido','#F59E0B','Salmos 103','Ayer diste gracias: seguimos en alabanza.'],['En paz','#14B8A6','Salmos 23','Ayer estuviste en paz: descansa en el Pastor.'],['Ansioso','#8B5CF6','Mateo 6:25–34','Ayer te sentiste ansioso: “No os afanéis por el día de mañana”.'],['Cansado','#6B7280','Isaías 40:28–31','Ayer te sentiste cansado: Él da nuevas fuerzas.'],['Triste','#6366F1','Salmos 34','Ayer te sentiste triste: Él está cerca.'],['Con fuerza','#EF4444','Josué 1','Ayer te sentiste fuerte: sé valiente.']];
+const MEMBERS = [
+  { name: 'Ana', i: 'A', color: '#E8B04B', streak: 31, p: 1, c: 1, e: 0 },
+  { name: 'Luis', i: 'L', color: '#3B82F6', streak: 9, p: 1, c: 0, e: 0 },
+  { name: 'María', i: 'M', color: '#14B8A6', streak: 17, p: 1, c: 1, e: 0 },
+  { name: 'Tú', i: 'H', color: '#6B3FBF', streak: 12, me: true },
+  { name: 'Pedro', i: 'P', color: '#EF4444', streak: 0, p: 0, c: 0, e: 0 },
+  { name: 'Sofía', i: 'S', color: '#DB2777', streak: 3, p: 0, c: 1, e: 0 }
+];
+
+class Component extends DCLogic {
+  state = {
+    screen: localStorage.getItem('mana_v2_screen') || 'home', source: 'plan', rhema: 4,
+    read: false, learned: '', apply: '', prayer: '', shareGroup: true, speaking: false,
+    moments: [true, false, false], learnedCheck: false, communionCheck: false, feel: null, closed: false,
+    nudged: true, nudges: {}, amen: false, toast: '',
+    signStep: 0, phone: '', groupName: 'Alma', groupType: 0, invited: [true, true, true, true, true, false], book: 0, pace: 0, period: 2,
+    replyTo: null, replyText: '', composeIdx: 4, composeText: '', posted: false,
+    thread: [
+      { name: 'Ana', i: 'A', color: '#E8B04B', time: '6:40', ref: 'Juan 14:23', rhema: 'Vendremos a él, y haremos morada con él.', text: 'Dios no me visita: quiere vivir conmigo. Hoy voy a lavar los platos sabiendo que no estoy sola.', amens: 4, me: false, comments: [{ name: 'María', i: 'M', color: '#14B8A6', text: 'Qué hermoso, Ana. Me lo llevo para hoy.' }] },
+      { name: 'Luis', i: 'L', color: '#3B82F6', time: '7:15', ref: 'Juan 14:6', rhema: 'Yo soy el camino, y la verdad, y la vida.', text: 'Me turba no saber qué hacer con el trabajo. Él es el camino, no un mapa. Voy a confiar paso a paso.', amens: 3, me: false, comments: [] },
+      { name: 'María', i: 'M', color: '#14B8A6', time: '12:02', ref: 'Juan 14:18', rhema: 'No os dejaré huérfanos; vendré a vosotros.', text: 'Extraño a mi papá. Este versículo me abrazó.', amens: 5, me: false, comments: [{ name: 'Ana', i: 'A', color: '#E8B04B', text: 'Oramos por ti, María. Aquí estamos.' }] }
+    ],
+    pfilter: 0, sheet: null, sheetFor: null, helpPick: 0, wordPick: 0, sheetText: '', newKind: 0, newNeeds: [true, false, false], newPrivacy: 0, newPrayerText: '',
+    prayers: [
+      { name: 'Pedro', i: 'P', color: '#EF4444', time: 'Hoy, 10:12', kind: 'Material', text: 'Hermanos, esta semana me quedé sin trabajo y hoy no tengo para la comida de mis hijos. Les pido oración, y si alguien puede ayudar, se lo agradezco de corazón.', praying: 3, me: false, helps: [{ name: 'Ana', text: 'ofreció comida para hoy' }], comments: [] },
+      { name: 'Sofía', i: 'S', color: '#DB2777', time: 'Ayer', kind: 'Salud', text: 'Mi mamá entra a operación el jueves. Oren para que todo salga bien y por paz para la familia.', praying: 5, me: false, helps: [], comments: [{ name: 'Luis', text: '“No temas, porque yo estoy contigo.” Isaías 41:10' }] },
+      { name: 'Luis', i: 'L', color: '#3B82F6', time: 'Dom', kind: 'Espiritual', text: 'Siento que me he enfriado. Me cuesta orar. Oren para que vuelva el primer amor.', praying: 4, me: false, helps: [], comments: [] }
+    ],
+    prayedFor: {},
+    welStep: 0, welMode: 0, welTime: 0, cared: {}, nextQ: '¿Qué significa para ti “permanecer” en Jesús esta semana?', joinDone: null,
+    rules: [true, true, true, false], reportDone: null, testiText: '', thanked: {}, meetIdx: 0,
+    testis: [
+      { name: 'Sofía', i: 'S', color: '#DB2777', time: 'Hace 2 días', asked: 'Que la operación de mi mamá saliera bien.', answer: 'Mi mamá salió muy bien de la operación y ya está en casa. Sentí la oración de todos. ¡Gracias, Alma!', prayed: 6, thanks: 9 },
+      { name: 'Pedro', i: 'P', color: '#EF4444', time: 'Semana pasada', asked: 'Trabajo para sostener a mi familia.', answer: 'Me llamaron de la empresa donde postulé. Empiezo el lunes. Dios es fiel.', prayed: 5, thanks: 12 },
+      { name: 'Luis', i: 'L', color: '#3B82F6', time: 'Hace 3 semanas', asked: 'Volver a tener ganas de orar.', answer: 'Leer juntos cada día me devolvió el hambre por la Palabra. No lo hubiera logrado solo.', prayed: 4, thanks: 7 }
+    ],
+    exCity: -1, joined: {}, city: 1, cityPray: {}, cityOffer: {}, reqCity: 1, reqKind: 1, reqText: '', myCityReqs: [],
+    diary: [{ date: 'Ayer', ref: 'Juan 13:34', rhema: 'Que os améis unos a otros; como yo os he amado.', learned: 'Amar no es un sentimiento, es una decisión que se nota.', apply: 'Llamar a mi hermano, aunque estemos distanciados.' }]
+  };
+  componentWillUnmount() { window.speechSynthesis && speechSynthesis.cancel(); }
+  go(screen) {
+    localStorage.setItem('mana_v2_screen', screen);
+    if (window.speechSynthesis) speechSynthesis.cancel();
+    this.setState({ screen, speaking: false, toast: '', closed: screen === 'examen' ? false : this.state.closed });
+  }
+  seg(list, cur, set) {
+    return list.map((label, i) => ({ label, pick: () => set(i), bg: cur === i ? '#FFFDF9' : 'transparent', fg: cur === i ? '#26211C' : '#6E655B', shadow: cur === i ? '0 1px 2px rgba(0,0,0,.08)' : 'none' }));
+  }
+  groupVals(s) {
+    const SIGN = [
+      { title: 'Empieza con tu número', sub: 'Sin contraseñas. Te enviaremos un código por SMS.', cta: 'Enviar código', isPhone: true },
+      { title: 'Escribe el código', sub: 'Lo enviamos al +51 ' + (s.phone || '987 654 321') + '.', cta: 'Verificar', isCode: true },
+      { title: '¡Bienvenido!', sub: 'Tienes una invitación esperándote.', cta: 'Unirme a Alma', isInvite: true }
+    ];
+    const sign = SIGN[s.signStep];
+    const inv = s.invited.filter(Boolean).length;
+    const B = BOOKS[s.book];
+    const days = [1, 7, 0][s.pace] && s.pace === 0 ? B[1] : Math.ceil(B[1] / [1, 2, 3][s.pace]);
+    const capsDay = [1, 2, 3][s.pace];
+    const periodTxt = ['Esta semana', 'Este mes', 'Hasta terminar'][s.period];
+    const totalDays = s.period === 0 ? 7 : s.period === 1 ? 30 : Math.ceil(B[1] / capsDay);
+    const pv = PASSAGES.plan.verses;
+    const filters = ['Todas', ...KINDS.map(k => k[0])];
+    const fsel = filters[s.pfilter];
+    const sheetP = s.sheetFor !== null ? s.prayers[s.sheetFor] : null;
+    const isHelp = s.sheet === 'help', isWord = s.sheet === 'word';
+    const updP = (i, fn) => this.setState(p => { const a = p.prayers.map((x, j) => j === i ? fn({ ...x }) : x); return { prayers: a }; });
+    return {
+      sign, phone: s.phone, onPhone: e => this.setState({ phone: e.target.value }),
+      otp: ['4','8','1','2','',''].map((d, i) => ({ d, border: i === 4 ? '#6B3FBF' : '#E2D9CC' })),
+      avatars: MEMBERS.map(m => ({ i: m.i, color: m.color })),
+      signNext: () => s.signStep < 2 ? this.setState({ signStep: s.signStep + 1 }) : (this.setState({ signStep: 0 }), this.go('group'), this.flash('Te uniste a Alma. ¡Bienvenido!')),
+      groupName: s.groupName, onGroupName: e => this.setState({ groupName: e.target.value }),
+      groupTypes: ['Grupo familiar', 'Célula', 'Amigos', 'Ministerio'].map((label, i) => ({ label, pick: () => this.setState({ groupType: i }), bg: s.groupType === i ? '#26211C' : '#FFFDF9', fg: s.groupType === i ? '#F5F0E8' : '#26211C', border: s.groupType === i ? '#26211C' : '#E2D9CC' })),
+      invitedCount: inv,
+      contacts: CONTACTS.map(([name, i, color, phone, onApp], k) => ({ name, i, color, phone, status: onApp ? 'Usa Maná' : 'Se le invitará por SMS', bg: s.invited[k] ? '#6B3FBF' : 'transparent', border: s.invited[k] ? '#6B3FBF' : '#D9D0C2',
+        toggle: () => this.setState(p => { const a = [...p.invited]; a[k] = !a[k]; return { invited: a }; }) })),
+      books: BOOKS.map(([name, caps], i) => ({ name, caps, pick: () => this.setState({ book: i }), bg: s.book === i ? '#EEE7F8' : '#FFFDF9', border: s.book === i ? '#6B3FBF' : '#E2D9CC' })),
+      paces: this.seg(['1 cap. diario', '2 caps.', '3 caps.'], s.pace, i => this.setState({ pace: i })),
+      periods: this.seg(['Semana', 'Mes', 'Todo el libro'], s.period, i => this.setState({ period: i })),
+      planSummary: B[0] + ' · ' + capsDay + (capsDay === 1 ? ' capítulo' : ' capítulos') + ' por día · ' + periodTxt.toLowerCase() + ' (' + totalDays + ' días). ' + (inv + 1) + ' personas, empiezan el lunes.',
+      startGroup: () => { this.go('group'); this.flash('Listo. ' + inv + ' invitaciones enviadas a ' + s.groupName); },
+      threadCount: s.thread.length,
+      canCompose: !s.posted,
+      thread: s.thread.map((p, k) => ({ ...p, replying: s.replyTo === k,
+        abg: p.amened ? '#6B3FBF' : 'transparent', afg: p.amened ? '#fff' : '#26211C', aborder: p.amened ? '#6B3FBF' : '#E2D9CC',
+        amen: () => this.setState(pr => ({ thread: pr.thread.map((x, j) => j === k ? { ...x, amened: !x.amened, amens: x.amens + (x.amened ? -1 : 1) } : x) })),
+        reply: () => this.setState({ replyTo: s.replyTo === k ? null : k, replyText: '' }) })),
+      quickReplies: QUICK.map(t => ({ t, use: () => this.setState({ replyText: t }) })),
+      replyText: s.replyText, onReply: e => this.setState({ replyText: e.target.value }),
+      sendReply: () => { const t = s.replyText.trim(); if (!t) return; this.setState(pr => ({ replyTo: null, replyText: '', thread: pr.thread.map((x, j) => j === pr.replyTo ? { ...x, comments: [...x.comments, { name: 'Tú', i: 'H', color: '#6B3FBF', text: t }] } : x) })); this.flash('Le enviaste un aliento'); },
+      composeVerses: pv.map(([n, t], i) => ({ n, t, pick: () => this.setState({ composeIdx: i }), bg: s.composeIdx === i ? '#EEE7F8' : '#FFFDF9', border: s.composeIdx === i ? '#6B3FBF' : '#EAE3D8' })),
+      composeText: s.composeText, onCompose: e => this.setState({ composeText: e.target.value }),
+      postBg: s.composeText.trim() ? '#6B3FBF' : '#B8A6DA',
+      postCompose: () => { const t = s.composeText.trim(); if (!t) return; const v = pv[s.composeIdx];
+        this.setState(pr => ({ posted: true, composeText: '', thread: [...pr.thread, { name: 'Tú', i: 'H', color: '#6B3FBF', time: 'Ahora', ref: 'Juan 14:' + v[0], rhema: v[1].split(/[;.]/)[0] + '.', text: t, amens: 0, me: true, comments: [] }] }));
+        this.go('chapter'); this.flash('Compartido con ' + s.groupName); },
+      openPrayers: s.prayers.length,
+      prayerFilters: filters.map((label, i) => ({ label, pick: () => this.setState({ pfilter: i }), bg: s.pfilter === i ? '#26211C' : '#FFFDF9', fg: s.pfilter === i ? '#F5F0E8' : '#26211C', border: s.pfilter === i ? '#26211C' : '#E2D9CC' })),
+      prayers: s.prayers.map((p, k) => ({ p, k })).filter(({ p }) => fsel === 'Todas' || p.kind === fsel).map(({ p, k }) => {
+        const did = !!s.prayedFor[k], ks = KIND_STYLE[p.kind];
+        return { ...p, tagBg: ks[0], tagFg: ks[1], hasHelp: p.helps.length > 0,
+          prayLabel: (did ? 'Orando · ' : 'Oraré · ') + p.praying, pbg: did ? '#26211C' : 'transparent', pfg: did ? '#F5F0E8' : '#26211C', pborder: did ? '#26211C' : '#E2D9CC',
+          pray: () => { this.setState(pr => ({ prayedFor: { ...pr.prayedFor, [k]: !did } })); updP(k, x => ({ ...x, praying: x.praying + (did ? -1 : 1) })); if (!did) this.flash(p.name + ' sabrá que estás orando'); },
+          encourage: () => this.setState({ sheet: 'word', sheetFor: k, sheetText: '', wordPick: 0 }),
+          help: () => this.setState({ sheet: 'help', sheetFor: k, sheetText: '', helpPick: 0 }) };
+      }),
+      sheetOpen: !!s.sheet,
+      sheet: { isHelp, isWord, who: sheetP ? sheetP.name : '',
+        title: isHelp ? '¿Cómo puedes ayudar a ' + (sheetP ? sheetP.name : '') + '?' : 'Una palabra para ' + (sheetP ? sheetP.name : ''),
+        placeholder: isHelp ? 'Ej. Te yapeo S/ 50 hoy / Te llevo almuerzo' : 'Escribe con tus palabras (opcional)',
+        cta: isHelp ? 'Ofrecer ayuda' : 'Enviar aliento', btn: isHelp ? '#0F7A55' : '#6B3FBF' },
+      helpOpts: HELPS.map(([label, icon], i) => ({ label, icon, pick: () => this.setState({ helpPick: i }), bg: s.helpPick === i ? '#E3F4EC' : '#FFFDF9', border: s.helpPick === i ? '#0F7A55' : '#E2D9CC' })),
+      wordOpts: WORDS.map((t, i) => ({ t, pick: () => this.setState({ wordPick: i }), bg: s.wordPick === i ? '#EEE7F8' : '#FFFDF9', border: s.wordPick === i ? '#6B3FBF' : '#EAE3D8' })),
+      sheetText: s.sheetText, onSheetText: e => this.setState({ sheetText: e.target.value }),
+      closeSheet: () => this.setState({ sheet: null }),
+      sendSheet: () => {
+        const k = s.sheetFor, t = s.sheetText.trim();
+        if (isHelp) { const h = HELPS[s.helpPick][0].toLowerCase(); updP(k, x => ({ ...x, helps: [...x.helps, { name: 'Tú', text: 'ofreciste ' + h + (t ? ': ' + t : '') }] })); this.flash('Le avisamos a ' + sheetP.name + '. Coordinen en privado.'); }
+        else { updP(k, x => ({ ...x, comments: [...x.comments, { name: 'Tú', text: t || WORDS[s.wordPick] }] })); this.flash('Aliento enviado a ' + sheetP.name); }
+        this.setState({ sheet: null });
+      },
+      kinds: KINDS.map(([label, icon, color], i) => ({ label, icon, color, pick: () => this.setState({ newKind: i }), bg: s.newKind === i ? '#FFFDF9' : 'transparent', border: s.newKind === i ? color : '#E2D9CC' })),
+      newPrayerText: s.newPrayerText, onNewPrayer: e => this.setState({ newPrayerText: e.target.value }),
+      needs: ['Oración', 'Palabra de aliento', 'Ayuda concreta'].map((label, i) => ({ label, toggle: () => this.setState(p => { const a = [...p.newNeeds]; a[i] = !a[i]; return { newNeeds: a }; }), bg: s.newNeeds[i] ? '#26211C' : '#FFFDF9', fg: s.newNeeds[i] ? '#F5F0E8' : '#26211C', border: s.newNeeds[i] ? '#26211C' : '#E2D9CC' })),
+      privacy: this.seg(['Todo el grupo', 'Solo el líder', 'Anónimo'], s.newPrivacy, i => this.setState({ newPrivacy: i })),
+      postPrayerBg: s.newPrayerText.trim() ? '#26211C' : '#9C9285',
+      postPrayer: () => { const t = s.newPrayerText.trim(); if (!t) return;
+        this.setState(p => ({ newPrayerText: '', pfilter: 0, prayers: [{ name: p.newPrivacy === 2 ? 'Anónimo' : 'Tú', i: p.newPrivacy === 2 ? '?' : 'H', color: p.newPrivacy === 2 ? '#9C9285' : '#6B3FBF', time: 'Ahora', kind: KINDS[p.newKind][0], text: t, praying: 0, me: true, helps: [], comments: [] }, ...p.prayers], prayedFor: Object.fromEntries(Object.entries(p.prayedFor).map(([a, b]) => [+a + 1, b])) }));
+        this.go('prayers'); this.flash(s.newPrivacy === 1 ? 'Enviado solo al líder' : 'Tu grupo ya está orando por ti'); },
+      goNewGroup: () => this.go('newgroup'), goGroupPlan: () => this.go('groupplan'), goChapter: () => this.go('chapter'), goCompose: () => this.go('compose'),
+      goPrayers: () => this.go('prayers'), goNewPrayer: () => this.go('newprayer')
+    };
+  }
+  toolVals(s) {
+    const night = s.welStep === 3;
+    const pickRow = (key, i) => () => this.setState({ [key]: i });
+    const row = (t, d, icon, color, soft, on, pick) => ({ t, d, icon, color, soft, pick: pick || (() => {}), bg: on ? (night ? '#2C2840' : '#FFFDF9') : (night ? 'transparent' : '#FFFDF9'), border: on ? (night ? '#E8C478' : '#6B3FBF') : (night ? '#2C2840' : '#EAE3D8') });
+    const WEL = [
+      { kicker: 'Bienvenido a Maná', title: 'Un día entero con Dios, no solo un versículo.', sub: 'Así funciona:', cta: 'Siguiente', rows: [
+        row('Mañana · La Palabra', 'Lees por plan o según cómo te sentiste ayer, y escribes lo que aprendes.', 'icon-book-open', '#6B3FBF', '#EEE7F8', false),
+        row('Durante el día · Comunión', 'Pequeños avisos para orar mientras trabajas, comes o caminas.', 'icon-sun', '#B7791F', '#FBF1DC', false),
+        row('Noche · Examen', 'Un checklist breve: ¿leí?, ¿aprendí?, ¿estuve con Él?', 'icon-moon', '#3D3A5C', '#E6E4F0', false)] },
+      { kicker: 'No caminas solo', title: 'Lean juntos, aunque no puedan juntarse.', sub: '“Perseveraban unánimes cada día.” Hechos 2:46', cta: 'Siguiente', rows: [
+        row('Tu grupo', 'Familia, célula o amigos leyendo el mismo capítulo cada día.', 'icon-users', '#0F7A55', '#E3F4EC', false),
+        row('Peticiones y ayuda', 'Oren unos por otros y ayúdense en lo concreto.', 'icon-hand-heart', '#BE185D', '#FBE4EF', false),
+        row('Red por ciudad', 'Pide oración o una visita donde la necesites.', 'icon-map-pin', '#0F5F43', '#E3F4EC', false)] },
+      { kicker: 'Para empezar', title: '¿Cómo quieres leer?', sub: 'Puedes cambiarlo cuando quieras.', cta: 'Siguiente', rows: [
+        row('Con un plan', 'El Evangelio de Juan · 21 días · 1 capítulo diario', 'icon-map', '#6B3FBF', '#EEE7F8', s.welMode === 0, pickRow('welMode', 0)),
+        row('Según cómo me siento', 'La lectura sale de tu examen de la noche anterior', 'icon-heart', '#BE185D', '#FBE4EF', s.welMode === 1, pickRow('welMode', 1)),
+        row('Con mi grupo', 'Lo que tu líder elija para todos', 'icon-users', '#0F7A55', '#E3F4EC', s.welMode === 2, pickRow('welMode', 2))] },
+      { kicker: 'Tus horarios', title: '¿Cuándo te acompañamos?', sub: 'Te avisaremos con suavidad. Nunca más de 5 veces al día.', cta: 'Empezar mi día con Dios', rows: [
+        row('Temprano', '6:00 Palabra · 21:00 Examen', 'icon-sunrise', '#E8C478', '#3A3426', s.welTime === 0, pickRow('welTime', 0)),
+        row('Normal', '7:00 Palabra · 21:30 Examen', 'icon-sun', '#E8C478', '#3A3426', s.welTime === 1, pickRow('welTime', 1)),
+        row('Tarde', '8:30 Palabra · 22:30 Examen', 'icon-moon', '#E8C478', '#3A3426', s.welTime === 2, pickRow('welTime', 2))] }
+    ];
+    const w = WEL[s.welStep];
+    const MEET = [
+      { kicker: 'Alma · Jueves 20:00', title: 'Esta semana leímos Juan 8 al 14', sub: '6 de 6 participaron · 23 aportes · 2 testimonios', size: '40px' },
+      { kicker: 'Ana aportó · Juan 14:23', title: '“Dios no me visita: quiere vivir conmigo.”', sub: '¿Cómo cambia tu semana saber que Él hace morada contigo?', size: '36px' },
+      { kicker: 'Luis aportó · Juan 14:6', title: '“Él es el camino, no un mapa.”', sub: 'Conversemos: ¿en qué decisión necesitas confiar paso a paso?', size: '36px' },
+      { kicker: 'Oremos juntos', title: 'Pedro, Sofía, Luis', sub: 'Trabajo · Recuperación de su mamá · El primer amor', size: '40px' },
+      { kicker: 'Dios respondió', title: '“Mi mamá salió muy bien de la operación.”', sub: 'Sofía · 6 oraron por esto. ¡Demos gracias!', size: '36px' }
+    ];
+    const careBase = [['Pedro', 'P', '#EF4444', '3 días sin leer · pidió ayuda el lunes'], ['Sofía', 'S', '#DB2777', 'Lee, pero no aporta hace una semana']];
+    const reportsOpen = s.reportDone === null ? 1 : 0;
+    return {
+      wel: { ...w, bg: night ? '#13111C' : '#F5F0E8', ink: night ? '#F3EFE6' : '#26211C', muted: night ? '#A39DB5' : '#6E655B', accent: night ? '#E8C478' : '#6B3FBF', btn: night ? '#E8C478' : '#6B3FBF', btnInk: night ? '#13111C' : '#fff' },
+      welDots: [0, 1, 2, 3].map(i => ({ w: i === s.welStep ? '22px' : '6px', bg: i === s.welStep ? (night ? '#E8C478' : '#6B3FBF') : (night ? '#2C2840' : '#D9D0C2') })),
+      welNext: () => s.welStep < 3 ? this.setState({ welStep: s.welStep + 1 }) : (this.setState({ welStep: 0 }), this.go('signup')),
+      skipWelcome: () => { this.setState({ welStep: 0 }); this.go('signup'); },
+      groupTools: [
+        ['Panel del líder', 'Cuida a tu grupo', 'icon-crown', '#5A33A8', '#EEE7F8', 'leader'],
+        ['Dios respondió', s.testis.length + ' testimonios', 'icon-sparkles', '#8A5A12', '#FBF1DC', 'testimonies'],
+        ['Resumen semanal', 'Juan 8 al 14', 'icon-chart-no-axes-column', '#0F5F43', '#E3F4EC', 'weekly'],
+        ['Modo reunión', 'Proyecta en la TV', 'icon-cast', '#26211C', '#F1EBE1', 'meeting']
+      ].map(([label, sub, icon, color, soft, k]) => ({ label, sub, icon, color, soft, go: () => this.go(k) })),
+      leaderStats: [{ v: '31/42', l: 'lecturas esta semana' }, { v: s.thread.length, l: 'aportes hoy' }, { v: s.prayers.length, l: 'peticiones abiertas' }],
+      careList: careBase.map(([name, i, color, why]) => { const d = !!s.cared[name]; return { name, i, color, why, label: d ? 'Enviado' : 'Escribirle', bg: d ? '#F1EBE1' : '#EEE7F8', fg: d ? '#9C9285' : '#5A33A8',
+        act: () => { if (d) return; this.setState(p => ({ cared: { ...p.cared, [name]: true } })); this.flash('Mensaje privado a ' + name + ': “Te extrañamos en Juan 14. ¿Cómo estás?”'); } }; }),
+      nextQ: s.nextQ, onNextQ: e => this.setState({ nextQ: e.target.value }),
+      qSuggest: ['¿Qué fruto ves en tu vida?', '¿Qué rama necesita poda?'].map(t => ({ t, use: () => this.setState({ nextQ: t }) })),
+      saveQ: () => this.flash('Pregunta programada para mañana a las 6:00'),
+      joinReqs: [{ name: 'Jorge Díaz', why: 'Invitado por Ana · primo de María', pending: s.joinDone === null, done: s.joinDone !== null, result: s.joinDone ? 'Aceptado. Le dimos la bienvenida en el grupo.' : 'Le dijimos que más adelante.',
+        accept: () => { this.setState({ joinDone: true }); this.flash('Jorge ahora es parte de Alma'); }, reject: () => this.setState({ joinDone: false }) }],
+      reportsLabel: reportsOpen ? '1 reporte por revisar · líder verificado' : 'Todo en orden · líder verificado',
+      rules: [
+        ['Ayuda material, solo entre miembros', 'Las peticiones materiales no salen del grupo'],
+        ['Ocultar números de teléfono', 'Nadie ve tu número salvo el líder'],
+        ['Ofrecimientos de ayuda en privado', 'Se coordinan entre quien pide y quien ayuda'],
+        ['Cerrar peticiones a los 30 días', 'Se pregunta si Dios respondió y se archivan']
+      ].map(([t, d], i) => ({ t, d, track: s.rules[i] ? '#0F7A55' : '#D9D0C2', knob: s.rules[i] ? 'flex-end' : 'flex-start', toggle: () => this.setState(p => { const r = [...p.rules]; r[i] = !r[i]; return { rules: r }; }) })),
+      reports: [{ tag: 'Ocultado automáticamente', time: 'Hoy, 11:20', text: 'Un número desconocido escribió en una petición: “Deposítame a esta cuenta y te ayudo”.', open: s.reportDone === null, closed: s.reportDone !== null,
+        result: s.reportDone ? 'Eliminado y bloqueado.' : 'Restaurado.', keep: () => this.setState({ reportDone: false }), remove: () => { this.setState({ reportDone: true }); this.flash('Mensaje eliminado y usuario bloqueado'); } }],
+      testiCount: s.testis.length, testiText: s.testiText, onTesti: e => this.setState({ testiText: e.target.value }),
+      postTesti: () => { const t = s.testiText.trim(); if (!t) return; this.setState(p => ({ testiText: '', testis: [{ name: 'Tú', i: 'H', color: '#6B3FBF', time: 'Ahora', asked: 'Paz en medio de la ansiedad.', answer: t, prayed: 5, thanks: 0 }, ...p.testis] })); this.flash('Tu grupo está dando gracias contigo'); },
+      testimonies: s.testis.map((t, k) => { const on = !!s.thanked[k]; return { ...t, thanks: t.thanks + (on ? 1 : 0), bg: on ? '#E8C478' : 'transparent', fg: '#26211C', border: on ? '#E8C478' : '#E2D9CC', thank: () => this.setState(p => ({ thanked: { ...p.thanked, [k]: !on } })) }; }),
+      weekStats: [{ v: '31', l: 'lecturas de 42', c: '#F5F0E8' }, { v: '23', l: 'aportes compartidos', c: '#F5F0E8' }, { v: '11', l: 'peticiones acompañadas', c: '#F5F0E8' }, { v: '2', l: 'testimonios', c: '#E8C478' }],
+      weekMembers: [['Ana', 7], ['María', 7], ['Tú', 6], ['Luis', 5], ['Sofía', 4], ['Pedro', 2]].map(([name, n]) => ({ name, days: Array.from({ length: 7 }, (_, i) => ({ bg: i < n ? '#C9B8F0' : '#3D362F' })) })),
+      doShareWeek: () => this.flash('Resumen enviado al grupo Alma'),
+      meet: MEET[s.meetIdx], meetBars: MEET.map((_, i) => ({ bg: i <= s.meetIdx ? '#E8C478' : '#2C2840' })),
+      meetNextLabel: s.meetIdx === MEET.length - 1 ? 'Terminar' : 'Siguiente',
+      meetPrev: () => this.setState({ meetIdx: Math.max(0, s.meetIdx - 1) }),
+      meetNext: () => s.meetIdx < MEET.length - 1 ? this.setState({ meetIdx: s.meetIdx + 1 }) : (this.setState({ meetIdx: 0 }), this.go('group')),
+      goLeader: () => this.go('leader'), goSafety: () => this.go('safety'), goMeeting: () => this.go('meeting')
+    };
+  }
+  communityVals(s) {
+    const chip = (on, dark = '#26211C') => ({ bg: on ? dark : '#FFFDF9', fg: on ? '#fff' : '#26211C', border: on ? dark : '#E2D9CC' });
+    const list = COMMS.filter(c => s.exCity < 0 || c[3] === CITIES[s.exCity]);
+    const cname = CITIES[s.city];
+    const reqs = [...s.myCityReqs, ...CITY_REQS].filter(r => r[4] === cname);
+    const KST = { Visita: ['#FBF1DC', '#8A5A12', 'icon-door-open'], Oración: ['#EEE7F8', '#5A33A8', 'icon-hand-heart'], Ayuda: ['#E3F4EC', '#0F5F43', 'icon-hand-helping'] };
+    const st = CITY_STATS[cname];
+    return {
+      myGroups: [
+        { name: 'Alma', i: 'A', color: '#6B3FBF', meta: 'Grupo familiar · 6 · eres líder', now: 'Hoy: Juan 14 · ' + s.thread.length + ' aportes', badge: s.prayers.length, go: () => this.go('group') },
+        { name: 'Jóvenes Vida Nueva', i: 'J', color: '#7C4FD6', meta: 'Iglesia · Arequipa · 86 miembros', now: 'Hoy: Hechos 5', badge: 0, go: () => this.flash('Abriría el grupo Jóvenes Vida Nueva') },
+        ...Object.keys(s.joined).filter(k => s.joined[k]).map(k => { const c = COMMS[+k]; return { name: c[0], i: c[1], color: c[2], meta: c[4] + ' · ' + c[3] + ' · ' + (c[5] + 1) + ' miembros', now: c[7] === 'Abierto' ? 'Hoy: ' + c[6] : 'Solicitud enviada', badge: 0, go: () => this.go('explore') }; })
+      ],
+      cityChips: ['Toda la red', ...CITIES].map((label, i) => ({ label, ...chip(s.exCity === i - 1), pick: () => this.setState({ exCity: i - 1 }) })),
+      exploreCount: list.length + (s.exCity < 0 ? ' comunidades en toda la red' : ' comunidades en ' + CITIES[s.exCity]),
+      communities: list.map(c => { const k = COMMS.indexOf(c), j = !!s.joined[k], open = c[7] === 'Abierto';
+        return { name: c[0], i: c[1], color: c[2], city: c[3], type: c[4], members: c[5] + (j ? 1 : 0), reading: c[6],
+          jlabel: j ? (open ? 'Ya estás dentro' : 'Solicitado') : (open ? 'Unirme' : 'Solicitar unirme'), jbg: j ? '#F1EBE1' : '#6B3FBF', jfg: j ? '#6E655B' : '#fff',
+          join: () => { if (j) return; this.setState(p => ({ joined: { ...p.joined, [k]: true } })); this.flash(open ? 'Te uniste a ' + c[0] : 'Solicitud enviada al líder de ' + c[0]); } }; }),
+      cityTabs: CITIES.map((label, i) => ({ label, ...chip(s.city === i, '#0F5F43'), pick: () => this.setState({ city: i }) })),
+      cityName: cname, cityStats: { people: st[0], groups: st[1], reqs: reqs.length },
+      cityReqs: reqs.map(r => { const key = r[0] + r[5], ks = KST[r[6]], pr = !!s.cityPray[key], of = !!s.cityOffer[key];
+        const offerTxt = r[6] === 'Visita' ? 'Puedo ir' : r[6] === 'Ayuda' ? 'Puedo ayudar' : 'Le escribo';
+        return { name: r[0], i: r[1], color: r[2], from: r[3], time: r[5], kind: r[6], text: r[7], hasStatus: !!r[8] || of, status: of ? 'Te ofreciste. Un líder de ' + cname + ' te contactará para coordinar.' : r[8],
+          tagBg: ks[0], tagFg: ks[1], icon: ks[2],
+          prayLabel: pr ? 'Orando' : 'Oraré', pbg: pr ? '#26211C' : 'transparent', pfg: pr ? '#fff' : '#26211C', pborder: pr ? '#26211C' : '#E2D9CC',
+          offerLabel: of ? 'Ofrecido' : offerTxt, obg: of ? '#F1EBE1' : '#E3F4EC', ofg: of ? '#6E655B' : '#0F5F43',
+          pray: () => { this.setState(p => ({ cityPray: { ...p.cityPray, [key]: !pr } })); if (!pr) this.flash(r[0] + ' sabrá que oras desde ' + 'tu ciudad'); },
+          offer: () => { if (of) return; this.setState(p => ({ cityOffer: { ...p.cityOffer, [key]: true } })); this.flash('Gracias. Coordinará un líder verificado.'); } }; }),
+      reqCities: CITIES.map((label, i) => ({ label, ...chip(s.reqCity === i, '#0F5F43'), pick: () => this.setState({ reqCity: i }) })),
+      reqKinds: REQ_KINDS.map(([label, icon], i) => ({ label, icon, pick: () => this.setState({ reqKind: i }), bg: s.reqKind === i ? '#E3F4EC' : '#FFFDF9', border: s.reqKind === i ? '#0F7A55' : '#E2D9CC' })),
+      reqText: s.reqText, onReqText: e => this.setState({ reqText: e.target.value }), reqCityName: CITIES[s.reqCity],
+      reqPlaceholder: ['Cuéntales por qué orar…', 'Ej. Mi mamá está en el hospital, ¿alguien podría visitarla?', 'Ej. Necesitamos víveres para una familia…'][s.reqKind],
+      reqBtnBg: s.reqText.trim() ? '#0F5F43' : '#8FB8A6',
+      postCityReq: () => { const t = s.reqText.trim(); if (!t) return; const c = CITIES[s.reqCity];
+        this.setState(p => ({ reqText: '', city: p.reqCity, myCityReqs: [['Tú', 'H', '#6B3FBF', 'Lima', c, 'Ahora', REQ_KINDS[p.reqKind][0], t, 'Enviado a ' + CITY_STATS[c][0] + ' hermanos de ' + c], ...p.myCityReqs] }));
+        this.go('city'); this.flash('Tu pedido llegó a la red de ' + c); },
+      goCommunity: () => this.go('community'), goExplore: () => this.go('explore'), goCity: () => this.go('city'), goCityRequest: () => this.go('cityrequest')
+    };
+  }
+  flash(toast) { this.setState({ toast }); clearTimeout(this.tt); this.tt = setTimeout(() => this.setState({ toast: '' }), 2400); }
+  renderVals() {
+    const s = this.state, P = PASSAGES[s.source];
+    const ri = Math.min(s.rhema, P.verses.length - 1);
+    const rv = P.verses[ri];
+    const rhema = { t: rv[1], ref: P.ref + ':' + rv[0], short: rv[1].split(/[;.]/)[0] };
+    const is = {}; SCREENS.forEach(([k]) => is[k] = s.screen === k);
+    const mDone = s.moments.filter(Boolean).length;
+    const feelSel = s.feel !== null ? FEEL[s.feel] : null;
+    const doneBg = '#6B3FBF';
+    const checksDone = { read: s.read, learned: s.learnedCheck || !!s.learned.trim(), rhema: s.read, communion: s.communionCheck || mDone === 3 };
+    return {
+      is, passage: P, rhema, toast: s.toast, nudged: s.nudged && !s.read, notRead: !s.read,
+      jumps: SCREENS.map(([k, label], i) => ({ n: String(i).padStart(2, '0'), label, go: () => this.go(k), bg: s.screen === k ? '#26211C' : 'transparent', fg: s.screen === k ? '#F5F0E8' : '#3D362F' })),
+      dot1: s.read ? { bg: doneBg, fg: '#fff', icon: 'icon-check', tag: 'Hecho', tagFg: '#0F7A55' } : { bg: '#EEE7F8', fg: '#5A33A8', icon: 'icon-book-open', tag: '7:00', tagFg: '#6B3FBF' },
+      dot2: mDone ? { bg: '#EEE7F8', fg: '#5A33A8' } : { bg: '#F1EBE1', fg: '#9C9285' },
+      dot3: s.closed ? { bg: doneBg, fg: '#fff', tag: 'Hecho', tagFg: '#0F7A55' } : { bg: '#F1EBE1', fg: '#6E655B', tag: '21:00', tagFg: '#9C9285' },
+      momentsLabel: mDone + ' de 3 momentos', examenLabel: s.closed ? 'Día cerrado' : 'Checklist y oración',
+      momentDots: s.moments.map(d => ({ bg: d ? '#6B3FBF' : '#E2D9CC' })),
+      groupRead: 3 + (s.read ? 1 : 0),
+      members: MEMBERS.map(m => ({ i: m.i, color: m.color, short: m.name, ring: (m.me ? s.read : m.p) ? '#0F9D63' : '#E2D9CC' })),
+      sources: [['plan', 'Mi plan'], ['ayer', 'Según ayer']].map(([k, label]) => ({ label, pick: () => this.setState({ source: k, rhema: k === 'plan' ? 4 : 3 }), bg: s.source === k ? '#FFFDF9' : 'transparent', fg: s.source === k ? '#26211C' : '#6E655B', shadow: s.source === k ? '0 1px 2px rgba(0,0,0,.08)' : 'none' })),
+      verses: P.verses.map(([n, t], i) => ({ n, t, pick: () => this.setState({ rhema: i }), bg: i === ri ? '#EEE7F8' : 'transparent' })),
+      rhemaHint: 'Tu rhema: ' + P.ref + ':' + rv[0] + ' · toca otro versículo si te habló más',
+      speakIcon: s.speaking ? 'icon-pause' : 'icon-headphones',
+      toggleSpeak: () => {
+        const synth = window.speechSynthesis; if (!synth) return this.flash('Tu navegador no tiene voz disponible');
+        if (s.speaking) { synth.cancel(); return this.setState({ speaking: false }); }
+        const u = new SpeechSynthesisUtterance(P.title + '. ' + P.verses.map(v => v[1]).join(' ')); u.lang = 'es-ES'; u.rate = 0.9;
+        u.onend = () => this.setState({ speaking: false }); synth.cancel(); synth.speak(u); this.setState({ speaking: true });
+      },
+      learned: s.learned, apply: s.apply, prayer: s.prayer,
+      onLearned: e => this.setState({ learned: e.target.value }), onApply: e => this.setState({ apply: e.target.value }), onPrayer: e => this.setState({ prayer: e.target.value }),
+      shareTrack: s.shareGroup ? '#6B3FBF' : '#D9D0C2', shareKnob: s.shareGroup ? 'flex-end' : 'flex-start',
+      toggleShareGroup: () => this.setState({ shareGroup: !s.shareGroup }),
+      saveDevo: () => {
+        this.setState(p => ({ read: true, diary: [{ date: 'Hoy', ref: rhema.ref, rhema: rhema.t, learned: p.learned.trim() || '—', apply: p.apply.trim() || '—' }, ...p.diary.filter(d => d.date !== 'Hoy')] }));
+        this.go('home'); this.flash(s.shareGroup ? 'Guardado y compartido con Alma' : 'Guardado en tu diario');
+      },
+      moments: MOMENTS.map(([time, where, text], i) => ({ time, where, text, toggle: () => this.setState(p => { const m = [...p.moments]; m[i] = !m[i]; return { moments: m }; }), bg: s.moments[i] ? '#6B3FBF' : 'transparent', border: s.moments[i] ? '#6B3FBF' : '#D9D0C2' })),
+      examenOpen: !s.closed, examenClosed: s.closed,
+      checks: [
+        { k: 'read', label: 'Leí la Palabra', detail: s.read ? P.title + ' · ' + P.why.split('·')[0].trim() : 'Aún no. Puedes leer ahora, no es tarde.' },
+        { k: 'learned', label: 'Aprendí algo nuevo', detail: s.learned.trim() || 'Toca para marcar. ¿Qué te enseñó Dios hoy?' },
+        { k: 'rhema', label: 'Mi palabra rema', detail: s.read ? '“' + rhema.short + '” · ' + rhema.ref : 'Marca un versículo al leer.' },
+        { k: 'communion', label: 'Viví en comunión', detail: mDone + ' de 3 momentos con Él durante el día' }
+      ].map(c => ({ ...c, bg: checksDone[c.k] ? '#E8C478' : 'transparent', border: checksDone[c.k] ? '#E8C478' : '#4A4563',
+        toggle: () => { if (c.k === 'read' || c.k === 'rhema') return s.read ? null : this.go('read'); if (c.k === 'learned') this.setState({ learnedCheck: !s.learnedCheck }); if (c.k === 'communion') this.setState({ communionCheck: !s.communionCheck }); } })),
+      feelings: FEEL.map(([name, color], i) => ({ name, color, pick: () => this.setState({ feel: i }), bg: s.feel === i ? '#F3EFE6' : 'transparent', fg: s.feel === i ? '#13111C' : '#F3EFE6', border: s.feel === i ? '#F3EFE6' : '#2C2840' })),
+      tomorrowHint: feelSel ? 'Mañana leerás ' + feelSel[2] + ' (o seguirás tu plan: Juan 15).' : 'Lo que elijas guiará tu lectura de mañana.',
+      tomorrow: feelSel ? { title: feelSel[2], why: feelSel[3] } : { title: 'Juan 15 · Día 13', why: 'Sigues tu plan con Alma.' },
+      closeDay: () => this.setState({ closed: true }),
+      memberRows: MEMBERS.map(m => {
+        const p = m.me ? s.read : m.p, c = m.me ? mDone > 0 : m.c, e = m.me ? s.closed : m.e;
+        const sent = !!s.nudges[m.name], can = !m.me && !p;
+        return { name: m.name, i: m.i, color: m.color, streak: m.me ? 12 + (s.read ? 1 : 0) : m.streak,
+          p: p ? '#0F9D63' : '#EAE3D8', c: c ? '#0F9D63' : '#EAE3D8', e: e ? '#0F9D63' : '#EAE3D8',
+          canNudge: can, noNudge: !can, nlabel: sent ? 'Enviado' : 'Recordar', nbg: sent ? '#F1EBE1' : '#EEE7F8', nfg: sent ? '#9C9285' : '#5A33A8',
+          nudge: () => { if (sent) return; this.setState(pr => ({ nudges: { ...pr.nudges, [m.name]: true } })); this.flash('Le recordaste a ' + m.name + ': “Te espero en Juan 14”'); } };
+      }),
+      feed: [
+        { name: 'Ana', i: 'A', color: '#E8B04B', time: '6:40', ref: 'Juan 14:23', rhema: 'Vendremos a él, y haremos morada con él.', learned: 'Dios no me visita: quiere vivir conmigo. Hoy voy a lavar los platos sabiendo que no estoy sola.', amens: 4 + (s.amen ? 1 : 0), amen: () => this.setState({ amen: !s.amen }), abg: s.amen ? '#6B3FBF' : 'transparent', afg: s.amen ? '#fff' : '#26211C', aborder: s.amen ? '#6B3FBF' : '#E2D9CC' },
+        { name: 'Luis', i: 'L', color: '#3B82F6', time: '7:15', ref: 'Juan 14:6', rhema: 'Yo soy el camino, y la verdad, y la vida.', learned: 'Estoy buscando dirección en el trabajo. Él es el camino, no un mapa.', amens: 2, amen: () => {}, abg: 'transparent', afg: '#26211C', aborder: '#E2D9CC' }
+      ],
+      planDays: [[10, 'Juan 12', 'done'], [11, 'Juan 13', 'done'], [12, 'Juan 14', 'today'], [13, 'Juan 15', ''], [14, 'Juan 16', '']].map(([n, title, st]) => {
+        const done = st === 'done' || (st === 'today' && s.read);
+        return { n, title, icon: done ? 'icon-check' : '', bg: done ? '#6B3FBF' : 'transparent', border: done ? '#6B3FBF' : (st === 'today' ? '#6B3FBF' : '#D9D0C2'), tag: st === 'today' ? (s.read ? 'Hecho' : 'Hoy') : '' };
+      }),
+      diary: s.diary,
+      ...this.groupVals(s),
+      tree: TREE.map(([label, icon, where, items]) => ({ label, icon, where, items: items.map(([k, l]) => ({ label: l, go: () => this.go(k), bg: s.screen === k ? '#26211C' : 'transparent', fg: s.screen === k ? '#F5F0E8' : '#3D362F' })) })),
+      nav: [['Hoy','icon-sun','home'],['Leer','icon-book-open','plan'],['Comunidad','icon-users','community'],['Yo','icon-circle-user','me']].map(([label, icon, k], t) => ({ label, icon, go: () => this.go(k), color: TAB_OF[s.screen] === t ? '#6B3FBF' : '#9C9285' })),
+      menu: [
+        { title: 'Mi vida devocional', items: [
+          ['Mi diario', s.diary.length + ' devocionales guardados', 'icon-notebook-pen', '#6B3FBF', '#EEE7F8', 'diary'],
+          ['Mi plan de lectura', 'El Evangelio de Juan · día 12 de 21', 'icon-book-open', '#6B3FBF', '#EEE7F8', 'plan'],
+          ['Momentos de comunión', '10:30 · 13:00 · 17:30', 'icon-sun', '#B7791F', '#FBF1DC', 'commune'],
+          ['Examen de la noche', 'Todos los días a las 21:00', 'icon-moon', '#3D3A5C', '#E6E4F0', 'examen'] ] },
+        { title: 'Mis grupos', items: [
+          ['Alma', 'Grupo familiar · eres líder · 6 personas', 'icon-users', '#0F7A55', '#E3F4EC', 'group'],
+          ['Peticiones de Alma', s.prayers.length + ' abiertas', 'icon-hand-heart', '#BE185D', '#FBE4EF', 'prayers'],
+          ['Panel del líder', 'Alma · cuidado, preguntas, solicitudes', 'icon-crown', '#5A33A8', '#EEE7F8', 'leader'],
+          ['Explorar comunidades', 'Por ciudad, iglesia o interés', 'icon-compass', '#5A33A8', '#EEE7F8', 'explore'],
+          ['Red por ciudad', 'Oración y visitas donde lo necesites', 'icon-map-pin', '#0F5F43', '#E3F4EC', 'city'],
+          ['Crear un grupo', 'Invita por número de teléfono', 'icon-plus', '#26211C', '#F1EBE1', 'newgroup'] ] },
+        { title: 'Cuenta', items: [
+          ['Recordatorios y tema', 'Día / Noche · horarios de avisos', 'icon-settings', '#26211C', '#F1EBE1', 'me'],
+          ['Cerrar sesión', '', 'icon-log-out', '#B42318', '#FDECEA', 'signup'] ] }
+      ].map(sec => ({ title: sec.title, items: sec.items.map(([label, sub, icon, color, soft, k]) => ({ label, sub, icon, color, soft, fg: k === 'signup' ? '#B42318' : '#26211C', go: () => this.go(k) })) })),
+      goMe: () => this.go('me'),
+      ...this.communityVals(s),
+      ...this.toolVals(s),
+      goHome: () => this.go('home'), goRead: () => this.go('read'), goDevo: () => this.go('devo'), goCommune: () => this.go('commune'),
+      goExamen: () => this.go('examen'), goGroup: () => this.go('group'), goPlan: () => this.go('plan'), goDiary: () => this.go('diary')
+    };
+  }
+}
+</script>
+</body>
+</html>
