@@ -11,7 +11,7 @@ export const App = () => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [settings, setSettings] = useState({ language: 'es', dark_mode: false });
-    const [view, setView] = useState('home');
+    const [view, setView] = useState('today');
     const [themeMode, setThemeModeState] = useState(localStorage.getItem(THEME_MODE_KEY) || 'auto');
     const [, tick] = useState(0);
 
@@ -48,7 +48,7 @@ export const App = () => {
         if (res.success) { setToken(res.token); setUser(res.user); localStorage.setItem('prayer_token', res.token); }
         return res;
     };
-    const handleLogout = () => { localStorage.removeItem('prayer_token'); setToken(null); setUser(null); setView('home'); };
+    const handleLogout = () => { localStorage.removeItem('prayer_token'); setToken(null); setUser(null); setView('today'); };
 
     if (loading) return <FullCenter T={T}><Spinner T={T} /></FullCenter>;
     if (!token) return <AuthScreen T={T} onAuth={handleAuth} lang={settings.language || 'es'} />;

@@ -8,6 +8,6 @@ CGIPassAuth On
 
 # Bloquear archivos de desarrollo/empaquetado que no deben ser públicos
 # (sin directivas "Require": interfieren con el header Authorization)
-RedirectMatch 404 ^/(android|docs|node_modules|www|\.git|\.claude)(/|$)
-RedirectMatch 404 ^/(package(-lock)?\.json|capacitor\.config\.json|config\.php|test\.php|index_2\.html)$
+RedirectMatch 404 ^/(android|docs|node_modules|tools|www|\.git|\.claude)(/|$)
+RedirectMatch 404 ^/(package(-lock)?\.json|migracion_fase1\.sql|capacitor\.config\.json|config\.php|test\.php|index_2\.html)$
 RedirectMatch 404 \.(sql|md)$

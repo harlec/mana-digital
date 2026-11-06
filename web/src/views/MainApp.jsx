@@ -1,13 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { NOTIFICATION_VERSE_KEY, api } from '../config';
 import { translations } from '../translations';
-import { FullCenter, Spinner } from '../ui';
+import { FullCenter, GhostBtn, Icon, Spinner } from '../ui';
 import { BottomNav } from './BottomNav';
 import { CheckinSheet } from './CheckinSheet';
 import { FavoritesView } from './FavoritesView';
 import { HistoryView } from './HistoryView';
 import { HomeView } from './HomeView';
 import { NotificationService } from './NotificationService';
+import { useDay } from '../useDay';
+import { TodayView } from './day/TodayView';
+import { ReadView } from './day/ReadView';
+import { DevoView } from './day/DevoView';
+import { CommuneView } from './day/CommuneView';
+import { ExamenView } from './day/ExamenView';
+import { PlanView } from './day/PlanView';
+import { DiaryView } from './day/DiaryView';
+import { MeView } from './day/MeView';
+import { Welcome } from './day/Welcome';
 import { SettingsView } from './SettingsView';
 import { StatsView } from './StatsView';
 
@@ -20,12 +30,18 @@ export const MainApp = ({ user, token, settings, onLogout, view, setView, onSett
     const [contentType, setContentType] = useState('verse');
     const [contentLoading, setContentLoading] = useState(false);
     const [emotions, setEmotions] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [legacyLoaded, setLegacyLoaded] = useState(false);
+    const [toastMsg, setToastMsg] = useState(null);
+    const dayCtx = useDay(token);
     const [favoritedVerses, setFavoritedVerses] = useState([]);
     const lang = settings.language || 'es';
     const t = translations[lang];
 
-    useEffect(() => { loadData(); }, []);
+    // El flujo clásico (versículo por emoción) solo se carga cuando se abre
+    useEffect(() => { if (view === 'home' && !legacyLoaded) { setLegacyLoaded(true); loadData(); } }, [view]);
+
+    const toast = (msg) => { setToastMsg(msg); setTimeout(() => setToastMsg(null), 2400); };
 
     useEffect(() => {
         const handleSWMessage = (event) => {
@@ -118,7 +134,38 @@ export const MainApp = ({ user, token, settings, onLogout, view, setView, onSett
     };
 
     const shell = { minHeight: '100dvh', background: T.bg, color: T.ink, fontFamily: T.sans, transition: 'background .4s, color .4s' };
-    if (loading) return <FullCenter T={T}><Spinner T={T} /></FullCenter>;
+    if (loading && view === 'home') return <FullCenter T={T}><Spinner T={T} /></FullCenter>;
+
+    const DAY_VIEWS = ['today', 'plan', 'read', 'devo', 'commune', 'examen', 'diary'];
+    const FLOW_VIEWS = ['read', 'devo', 'examen', 'settings'];
+    const day = dayCtx.day;
+    const actions = { ...dayCtx, reload: dayCtx.reload };
+    const go = setView;
+
+    let dayContent = null;
+    if (DAY_VIEWS.includes(view)) {
+        if (dayCtx.status === 'loading') dayContent = <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}><Spinner T={T} /></div>;
+        else if (dayCtx.status === 'pending') dayContent = (
+            <div style={{ padding: '48px 8px', textAlign: 'center', color: T.ink }}>
+                <h2 style={{ fontFamily: T.serif, fontWeight: 400, fontSize: 28 * T.serifSize, margin: '0 0 10px' }}>Estamos preparando tu día</h2>
+                <p style={{ color: T.muted, lineHeight: 1.5, margin: '0 0 20px' }}>El devocional diario se está activando en el servidor. Mientras tanto puedes recibir un versículo.</p>
+                <GhostBtn T={T} onClick={() => setView('home')} style={{ width: '100%' }}>Un versículo según cómo me siento</GhostBtn>
+            </div>);
+        else if (dayCtx.status === 'error' || !day) dayContent = (
+            <div style={{ padding: '48px 8px', textAlign: 'center', color: T.ink }}>
+                <p style={{ color: T.muted, margin: '0 0 20px' }}>No pudimos cargar tu día. Revisa tu conexión.</p>
+                <GhostBtn T={T} onClick={dayCtx.reload} style={{ width: '100%' }}>Reintentar</GhostBtn>
+            </div>);
+    }
+    if (DAY_VIEWS.includes(view) && !dayContent && day && !day.settings.onboarded) return <Welcome day={day} actions={actions} />;
+
+    const props = { T, day, actions, go, token, user, toast };
+    if (!dayContent && DAY_VIEWS.includes(view)) {
+        dayContent = {
+            today: <TodayView {...props} />, plan: <PlanView {...props} />, read: <ReadView {...props} />, devo: <DevoView {...props} />,
+            commune: <CommuneView {...props} />, examen: <ExamenView {...props} />, diary: <DiaryView {...props} />
+        }[view];
+    }
 
     return (
         <div style={shell}>
@@ -127,19 +174,27 @@ export const MainApp = ({ user, token, settings, onLogout, view, setView, onSett
                 <CheckinSheet T={T} emotions={emotions} lang={lang} t={t} user={user} onSubmit={handleCheckin}
                     onSkip={() => { setShowCheckin(false); if (!currentVerse) loadVerse(); }} />
             )}
-            <div style={{ maxWidth: 560, margin: '0 auto', padding: `max(16px, env(safe-area-inset-top)) 16px ${view === 'settings' ? 32 : 120}px`, boxSizing: 'border-box' }}>
-                {view === 'home' && <HomeView T={T} lang={lang} t={t} user={user} verse={currentVerse} story={currentStory} contentType={contentType}
+            <div style={{ maxWidth: 560, margin: '0 auto', padding: `max(16px, env(safe-area-inset-top)) 16px ${view === 'settings' || FLOW_VIEWS.includes(view) ? 32 : 120}px`, boxSizing: 'border-box' }}>
+                {dayContent}
+                {view === 'me' && <MeView T={T} user={user} day={day} go={go} onLogout={onLogout} />}
+                {view === 'home' && <><BackToMe T={T} go={go} /><HomeView T={T} lang={lang} t={t} user={user} verse={currentVerse} story={currentStory} contentType={contentType}
                     contentLoading={contentLoading} checkin={todayCheckin} onRefresh={contentType === 'verse' ? () => loadVerse(true) : loadStory}
                     onSetContent={setContent} onShowCheckin={() => setShowCheckin(true)} onOpenSettings={() => setView('settings')}
-                    favoritedVerses={favoritedVerses} onToggleFavorite={toggleFavorite} />}
-                {view === 'history' && <HistoryView T={T} token={token} lang={lang} t={t} />}
-                {view === 'stats' && <StatsView T={T} token={token} lang={lang} t={t} />}
-                {view === 'favorites' && <FavoritesView T={T} token={token} lang={lang} t={t} onChange={loadFavorites} />}
-                {view === 'settings' && <SettingsView T={T} settings={settings} token={token} onUpdate={onSettingsUpdate} onClose={() => setView('home')}
+                    favoritedVerses={favoritedVerses} onToggleFavorite={toggleFavorite} /></>}
+                {view === 'history' && <><BackToMe T={T} go={go} /><HistoryView T={T} token={token} lang={lang} t={t} /></>}
+                {view === 'stats' && <><BackToMe T={T} go={go} /><StatsView T={T} token={token} lang={lang} t={t} /></>}
+                {view === 'favorites' && <><BackToMe T={T} go={go} /><FavoritesView T={T} token={token} lang={lang} t={t} onChange={loadFavorites} /></>}
+                {view === 'settings' && <SettingsView T={T} settings={settings} token={token} onUpdate={onSettingsUpdate} onClose={() => setView('me')}
                     onLogout={onLogout} t={t} themeMode={themeMode} setThemeMode={setThemeMode} />}
             </div>
-            {view !== 'settings' && <BottomNav T={T} view={view} setView={setView} t={t} />}
+            {!FLOW_VIEWS.includes(view) && <BottomNav T={T} view={view} setView={setView} t={t} />}
+            {toastMsg && <div role="status" style={{ position: 'fixed', left: 16, right: 16, bottom: 100, maxWidth: 400, margin: '0 auto', background: '#26211C', color: '#F5F0E8', borderRadius: 16, padding: '14px 18px', fontSize: 14, textAlign: 'center', zIndex: 60 }} className="anim-up">{toastMsg}</div>}
         </div>
     );
 };
 
+const BackToMe = ({ T, go }) => (
+    <button onClick={() => go('me')} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: T.muted, fontSize: 14, fontWeight: 600, padding: '4px 0 12px', height: 44 }}>
+        <Icon n="chevron-left" size={18} />Yo
+    </button>
+);
