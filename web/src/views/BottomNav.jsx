@@ -6,10 +6,11 @@ export const BottomNav = ({ T, view, setView, t }) => {
     const items = [
         { id: 'today', icon: 'sun', label: 'Hoy' },
         { id: 'plan', icon: 'book-open', label: 'Leer' },
+        { id: 'groups', icon: 'users', label: 'Grupos' },
         { id: 'me', icon: 'circle-user', label: 'Yo' }
     ];
     // Pantallas que pertenecen a cada pestaña
-    const TAB_OF = { today: 'today', commune: 'today', examen: 'today', plan: 'plan', read: 'plan' };
+    const TAB_OF = { today: 'today', commune: 'today', examen: 'today', plan: 'plan', read: 'plan', groups: 'groups' };
     const tab = TAB_OF[view] || 'me';
     if (T.pill) {
         return (

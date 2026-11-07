@@ -33,6 +33,13 @@ export const TodayView = ({ T, user, day, go }) => {
                 </div>
             </div>
 
+            {(day.nudges || []).map((n, i) => (
+                <button key={i} onClick={() => go(day.read_done ? 'devo' : 'read')} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', marginBottom: 10, padding: '12px 16px', borderRadius: 18, border: 'none', background: T.accentSoft, color: T.accentText, fontSize: 14, lineHeight: 1.4 }}>
+                    <Icon n="bell-ring" size={18} />
+                    <span><b>{n.from_name}</b> te recuerda en {n.group_name}: {n.message}</span>
+                </button>
+            ))}
+
             <Card T={T} style={{ overflow: 'hidden', marginBottom: 14 }}>
                 <div style={{ padding: '16px 18px 4px', fontFamily: T.serif, fontSize: 22 * T.serifSize, color: T.ink }}>Tu día con Dios</div>
                 <Row T={T} icon="sun" kicker="Mañana · La Palabra" title={day.reading.title}

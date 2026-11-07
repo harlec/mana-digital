@@ -20,6 +20,8 @@ import { MeView } from './day/MeView';
 import { Welcome } from './day/Welcome';
 import { SettingsView } from './SettingsView';
 import { StatsView } from './StatsView';
+import { GroupsTab } from './groups/GroupsTab';
+import { JOIN_KEY } from './groups/shared';
 
 // ============ CONTENEDOR PRINCIPAL ============
 export const MainApp = ({ user, token, settings, onLogout, view, setView, onSettingsUpdate, T, themeMode, setThemeMode }) => {
@@ -40,6 +42,9 @@ export const MainApp = ({ user, token, settings, onLogout, view, setView, onSett
 
     // El flujo clásico (versículo por emoción) solo se carga cuando se abre
     useEffect(() => { if (view === 'home' && !legacyLoaded) { setLegacyLoaded(true); loadData(); } }, [view]);
+
+    // Llegó con un enlace de invitación: ir directo a Grupos
+    useEffect(() => { try { if (sessionStorage.getItem(JOIN_KEY)) setView('groups'); } catch (e) {} }, []);
 
     const toast = (msg) => { setToastMsg(msg); setTimeout(() => setToastMsg(null), 2400); };
 
@@ -176,6 +181,7 @@ export const MainApp = ({ user, token, settings, onLogout, view, setView, onSett
             )}
             <div style={{ maxWidth: 560, margin: '0 auto', padding: `max(16px, env(safe-area-inset-top)) 16px ${view === 'settings' || FLOW_VIEWS.includes(view) ? 32 : 120}px`, boxSizing: 'border-box' }}>
                 {dayContent}
+                {view === 'groups' && <GroupsTab T={T} token={token} user={user} toast={toast} />}
                 {view === 'me' && <MeView T={T} user={user} day={day} go={go} onLogout={onLogout} />}
                 {view === 'home' && <><BackToMe T={T} go={go} /><HomeView T={T} lang={lang} t={t} user={user} verse={currentVerse} story={currentStory} contentType={contentType}
                     contentLoading={contentLoading} checkin={todayCheckin} onRefresh={contentType === 'verse' ? () => loadVerse(true) : loadStory}
