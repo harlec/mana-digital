@@ -16,7 +16,7 @@ $userId = getCurrentUser();
 // Recordatorios de hoy de otros miembros; vacío si la Fase 2 aún no se migró
 function todayNudges(PDO $db, $userId, $today) {
     try {
-        $stmt = $db->prepare('SELECT u.name AS from_name, g.name AS group_name, n.message FROM nudges n
+        $stmt = $db->prepare('SELECT u.name AS from_name, g.name AS group_name, n.message, n.kind FROM nudges n
             INNER JOIN users u ON u.id = n.from_user_id INNER JOIN `groups` g ON g.id = n.group_id
             WHERE n.to_user_id = ? AND n.date = ? ORDER BY n.id DESC LIMIT 5');
         $stmt->execute([$userId, $today]);

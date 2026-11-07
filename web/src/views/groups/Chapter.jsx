@@ -31,6 +31,7 @@ const Contribution = ({ T, c, token, onChange }) => {
             <div style={{ fontSize: 15, lineHeight: 1.55, color: T.ink }}>{c.text}</div>
             <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                 <button onClick={amen} aria-pressed={c.i_amened} style={{ height: 36, padding: '0 14px', borderRadius: 18, border: c.i_amened ? 'none' : `1px solid ${T.line}`, background: c.i_amened ? T.accent : 'transparent', color: c.i_amened ? T.accentInk : T.ink, fontSize: 13, fontWeight: 700 }}>Amén{c.amens ? ` · ${c.amens}` : ''}</button>
+                {!c.is_me && <button onClick={async () => { if (window.confirm('¿Reportar este aporte al líder del grupo?')) { const r = await api.call('/leader.php?action=report', 'POST', { target_type: 'contribution', target_id: c.id }, token); if (r.success) onChange('Reporte enviado al líder'); } }} aria-label="Reportar" style={{ height: 36, width: 36, marginLeft: 'auto', borderRadius: 18, border: 'none', background: 'transparent', color: T.faint }}><Icon n="flag" size={16} /></button>}
                 {!c.is_me && <button onClick={() => setOpen(!open)} style={{ height: 36, padding: '0 14px', borderRadius: 18, border: `1px solid ${T.line}`, background: 'transparent', color: T.ink, fontSize: 13, fontWeight: 700 }}>Animar</button>}
             </div>
             {c.comments.map(m => (
@@ -122,7 +123,7 @@ export const Chapter = ({ T, token, id, toast, onBack }) => {
             )}
 
             {d.contributions.length === 0 && <p style={{ margin: '8px 4px 18px', color: T.muted, fontSize: 14 }}>Sé el primero en compartir lo que Dios te habló.</p>}
-            {d.contributions.map(c => <Contribution key={c.id} T={T} c={c} token={token} onChange={load} />)}
+            {d.contributions.map(c => <Contribution key={c.id} T={T} c={c} token={token} onChange={(m) => { if (typeof m === 'string') toast(m); load(); }} />)}
 
             <p style={{ textAlign: 'center', margin: '20px 0 12px', fontFamily: T.serif, fontStyle: 'italic', color: T.muted, fontSize: 15 * T.serifSize }}>“Y perseveraban… en la comunión unos con otros.” — Hechos 2:42</p>
             <PrimaryBtn T={T} onClick={() => { const mine = d.contributions.find(c => c.is_me); setText(mine ? mine.text : ''); setComposing(true); }} style={{ width: '100%' }}>

@@ -38,6 +38,10 @@ try {
         $groupId = (int)($_GET['group_id'] ?? 0);
         $role = requireMember($db, $groupId, $userId);
         $kind = $_GET['kind'] ?? '';
+        if (groupRules($db, $groupId)['close_after_30d']) {
+            $db->prepare('UPDATE prayer_requests SET status = ? WHERE group_id = ? AND status = ? AND created_at < (NOW() - INTERVAL ' . STALE_DAYS . ' DAY)')
+                ->execute(['closed', $groupId, 'open']);
+        }
 
         $sql = 'SELECT p.*, u.name FROM prayer_requests p INNER JOIN users u ON u.id = p.user_id
             WHERE p.group_id = ? AND p.status = ? AND (p.user_id = ? OR ? = 1 OR (p.hidden = 0 AND p.visibility <> ?))';
@@ -89,9 +93,13 @@ try {
             jsonResponse(['success' => false, 'error' => 'Invalid request'], 400);
         }
         if (!$needs) $needs = ['prayer'];
+        if ($visibility === 'anonymous' && !groupRules($db, $groupId)['allow_anonymous']) {
+            jsonResponse(['success' => false, 'error' => 'Anonymous not allowed'], 403);
+        }
         $risky = looksRisky($text);
         $db->prepare('INSERT INTO prayer_requests (group_id, user_id, kind, text, needs, visibility, hidden) VALUES (?, ?, ?, ?, ?, ?, ?)')
             ->execute([$groupId, $userId, $kind, $text, implode(',', $needs), $visibility, $risky ? 1 : 0]);
+        if ($risky) autoReport($db, $groupId, 'prayer', (int)$db->lastInsertId(), 'Posibles datos de cuenta, teléfono o enlace');
         jsonResponse(['success' => true, 'under_review' => $risky], 201);
     }
 
@@ -107,8 +115,10 @@ try {
         [$p] = loadPrayer($db, (int)($data['id'] ?? 0), $userId);
         $text = trim($data['text'] ?? '');
         if ($text === '' || mb_strlen($text) > 1000) jsonResponse(['success' => false, 'error' => 'Invalid text'], 400);
+        $risky = looksRisky($text);
         $db->prepare('INSERT INTO comments (target_type, target_id, user_id, text, hidden) VALUES (?, ?, ?, ?, ?)')
-            ->execute(['prayer', $p['id'], $userId, $text, looksRisky($text) ? 1 : 0]);
+            ->execute(['prayer', $p['id'], $userId, $text, $risky ? 1 : 0]);
+        if ($risky) autoReport($db, $p['group_id'], 'comment', (int)$db->lastInsertId(), 'Posibles datos de cuenta, teléfono o enlace');
         jsonResponse(['success' => true], 201);
     }
 

@@ -36,7 +36,7 @@ export const TodayView = ({ T, user, day, go }) => {
             {(day.nudges || []).map((n, i) => (
                 <button key={i} onClick={() => go(day.read_done ? 'devo' : 'read')} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', marginBottom: 10, padding: '12px 16px', borderRadius: 18, border: 'none', background: T.accentSoft, color: T.accentText, fontSize: 14, lineHeight: 1.4 }}>
                     <Icon n="bell-ring" size={18} />
-                    <span><b>{n.from_name}</b> te recuerda en {n.group_name}: {n.message}</span>
+                    <span>{n.kind === 'care' ? <><b>{n.from_name}</b> · {n.group_name}: {n.message}</> : <><b>{n.from_name}</b> te recuerda en {n.group_name}: {n.message}</>}</span>
                 </button>
             ))}
 

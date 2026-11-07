@@ -90,6 +90,12 @@ export const GroupDetail = ({ T, token, id, toast, onBack, onChapter, onOpen }) 
                 <Icon n="chevron-right" size={18} style={{ color: T.faint }} />
             </button>
 
+            <div style={{ display: 'grid', gridTemplateColumns: leader ? '1fr 1fr 1fr' : '1fr', gap: 10, marginBottom: 14 }}>
+                {leader && <GhostBtn T={T} onClick={() => onOpen('leader', g)} style={{ height: 56, flexDirection: 'column', gap: 2, fontSize: 13 }}><Icon n="shield-check" size={18} />Panel</GhostBtn>}
+                <GhostBtn T={T} onClick={() => onOpen('weekly', g)} style={{ height: 56, flexDirection: 'column', gap: 2, fontSize: 13 }}><Icon n="chart-no-axes-column" size={18} />Resumen semanal</GhostBtn>
+                {leader && <GhostBtn T={T} onClick={() => onOpen('meeting', g)} style={{ height: 56, flexDirection: 'column', gap: 2, fontSize: 13 }}><Icon n="presentation" size={18} />Reunión</GhostBtn>}
+            </div>
+
             <Card T={T} style={{ padding: 16, marginBottom: 14 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                     <Kicker T={T}>Invitar</Kicker>

@@ -8,6 +8,10 @@ import { Chapter } from './Chapter';
 import { Prayers } from './Prayers';
 import { NewPrayer } from './NewPrayer';
 import { Testimonies } from './Testimonies';
+import { Leader, Safety } from './Leader';
+import { Weekly } from './Weekly';
+import { Meeting } from './Meeting';
+import { Pastoral } from './Pastoral';
 
 const JoinCard = ({ T, token, code, onDone, onCancel }) => {
     const [g, setG] = useState(null);
@@ -80,6 +84,15 @@ export const GroupsTab = ({ T, token, user, toast }) => {
     if (screen.name === 'newprayer') return <NewPrayer T={T} token={token} group={screen.group} toast={toast} onBack={() => setScreen({ name: 'prayers', id: screen.id, group: screen.group })} onDone={() => setScreen({ name: 'prayers', id: screen.id, group: screen.group })} />;
     if (screen.name === 'testimonies') return <Testimonies T={T} token={token} group={screen.group} onBack={() => setScreen({ name: 'group', id: screen.id })} />;
 
+    const to = (name, group) => setScreen(prev => ({ name, id: group.id, group, from: prev.from }));
+    const back = (name, group) => () => to(name, group);
+    if (screen.name === 'pastoral') return <Pastoral T={T} token={token} onBack={() => setScreen({ name: 'list' })} onOpen={(g) => setScreen({ name: 'leader', id: g.id, group: { ...g, role: 'leader' }, from: 'pastoral' })} />;
+    if (screen.name === 'leader') return <Leader T={T} token={token} group={screen.group} toast={toast} onBack={() => { load(); setScreen(screen.from === 'pastoral' ? { name: 'pastoral' } : { name: 'group', id: screen.id }); }}
+        onSafety={() => to('safety', screen.group)} onMeeting={() => to('meeting', screen.group)} onWeekly={() => to('weekly', screen.group)} />;
+    if (screen.name === 'safety') return <Safety T={T} token={token} group={screen.group} toast={toast} onBack={back('leader', screen.group)} />;
+    if (screen.name === 'weekly') return <Weekly T={T} token={token} group={screen.group} toast={toast} leader={screen.group.role === 'leader'} onBack={back('group', screen.group)} onMeeting={() => to('meeting', screen.group)} />;
+    if (screen.name === 'meeting') return <Meeting token={token} group={screen.group} onExit={back('group', screen.group)} />;
+
     if (migration) return <div className="anim-up"><PageTitle T={T}>Comunidad</PageTitle><p style={{ color: T.muted, lineHeight: 1.5 }}>Los grupos estarán disponibles en cuanto se active la actualización en el servidor.</p></div>;
 
     return (
@@ -89,6 +102,16 @@ export const GroupsTab = ({ T, token, user, toast }) => {
 
             {pending && <JoinCard T={T} token={token} code={pending} onDone={open} onCancel={clearPending} />}
 
+            {groups && groups.some(g => g.role === 'leader') && (
+                <button onClick={() => setScreen({ name: 'pastoral' })} style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', textAlign: 'left', padding: 16, marginBottom: 18, borderRadius: 22, border: 'none', background: T.pill ? T.surface : '#26211C', color: T.pill ? T.ink : '#F5F0E8' }}>
+                    <Icon n="church" size={24} />
+                    <span style={{ flex: 1 }}>
+                        <span style={{ display: 'block', fontFamily: T.serif, fontSize: 20 * T.serifSize }}>Vista pastoral</span>
+                        <span style={{ display: 'block', fontSize: 13, opacity: .75 }}>Todos tus grupos de un vistazo y quién necesita ánimo</span>
+                    </span>
+                    <Icon n="chevron-right" size={18} />
+                </button>
+            )}
             <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: T.muted, margin: '0 4px 8px' }}>Mis grupos</div>
             {!groups && <Spinner T={T} />}
             {groups && groups.length === 0 && (

@@ -23,6 +23,7 @@ const Prayer = ({ T, p, token, onChange, toast }) => {
                     <div style={{ fontSize: 12, color: T.muted }}>{timeLabel(p.created_at)}</div>
                 </div>
                 <KindTag kind={p.kind} />
+                {!p.is_me && <button onClick={async () => { if (window.confirm('¿Reportar esta petición al líder del grupo?')) { const r = await api.call('/leader.php?action=report', 'POST', { target_type: 'prayer', target_id: p.id }, token); if (r.success) toast('Reporte enviado al líder'); } }} aria-label="Reportar" style={{ height: 32, width: 32, borderRadius: 16, border: 'none', background: 'transparent', color: T.faint }}><Icon n="flag" size={15} /></button>}
             </div>
             {p.under_review && <div style={{ marginBottom: 8, padding: '8px 12px', borderRadius: 12, background: '#FBF1DC', color: '#8A5A12', fontSize: 13, lineHeight: 1.4 }}>Tu mensaje parece incluir datos de cuenta, teléfono o enlaces, así que solo lo ven tú y el líder. Para pedir ayuda concreta, usa “Puedo ayudar”: se coordina en privado.</div>}
             <div style={{ fontSize: 15, lineHeight: 1.55, color: T.ink }}>{p.text}</div>

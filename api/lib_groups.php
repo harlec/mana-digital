@@ -126,3 +126,88 @@ function openPrayersCount(PDO $db, $groupId, $userId, $role) {
         return 0;
     }
 }
+
+// ---------- Fase 4: líder ----------
+function leaderDb() {
+    $db = prayersDb();
+    try {
+        $db->query('SELECT 1 FROM reports LIMIT 1');
+    } catch (PDOException $e) {
+        jsonResponse(['success' => false, 'error' => 'leader_migration_pending'], 503);
+    }
+    return $db;
+}
+
+function requireLeader(PDO $db, $groupId, $userId) {
+    if (requireMember($db, $groupId, $userId) !== 'leader') jsonResponse(['success' => false, 'error' => 'Leader only'], 403);
+}
+
+function groupRules(PDO $db, $groupId) {
+    try {
+        $stmt = $db->prepare('SELECT close_after_30d, allow_anonymous FROM group_rules WHERE group_id = ?');
+        $stmt->execute([$groupId]);
+        $r = $stmt->fetch();
+    } catch (PDOException $e) {
+        $r = null;
+    }
+    return ['close_after_30d' => $r ? (bool)$r['close_after_30d'] : false, 'allow_anonymous' => $r ? (bool)$r['allow_anonymous'] : true];
+}
+
+// Reporte automático (reporter NULL); no falla si la Fase 4 aún no se migró
+function autoReport(PDO $db, $groupId, $type, $targetId, $reason) {
+    try {
+        $db->prepare('INSERT INTO reports (group_id, reporter_id, target_type, target_id, reason) VALUES (?, NULL, ?, ?, ?)')
+            ->execute([$groupId, $type, $targetId, $reason]);
+    } catch (PDOException $e) {
+        error_log('autoReport: ' . $e->getMessage());
+    }
+}
+
+// Lunes–domingo de la semana desplazada $offset semanas (0 = actual)
+function weekRange($offset, $today) {
+    $mon = new DateTime($today);
+    $mon->modify('monday this week')->modify(((int)$offset * 7) . ' days');
+    $sun = clone $mon;
+    $sun->modify('+6 days');
+    return [$mon->format('Y-m-d'), $sun->format('Y-m-d')];
+}
+
+function daysBetween($from, $to) { return (int)floor((strtotime($to) - strtotime($from)) / 86400); }
+
+// Miembros que necesitan ánimo: ≥3 días sin leer o ≥7 días sin aportar (contando desde que se unieron)
+function needsCare(PDO $db, $groupId, $leaderId, $today) {
+    $stmt = $db->prepare('SELECT u.id, u.name, DATE(m.joined_at) AS joined,
+            (SELECT MAX(d.date) FROM daily_readings d WHERE d.user_id = u.id AND d.read_at IS NOT NULL) AS last_read,
+            (SELECT MAX(c.date) FROM contributions c WHERE c.user_id = u.id AND c.group_id = m.group_id) AS last_contrib
+        FROM group_members m INNER JOIN users u ON u.id = m.user_id WHERE m.group_id = ? AND m.user_id <> ?');
+    $stmt->execute([$groupId, $leaderId]);
+    $out = [];
+    foreach ($stmt->fetchAll() as $m) {
+        $sinceRead = daysBetween($m['last_read'] && $m['last_read'] > $m['joined'] ? $m['last_read'] : $m['joined'], $today);
+        $sinceContrib = daysBetween($m['last_contrib'] && $m['last_contrib'] > $m['joined'] ? $m['last_contrib'] : $m['joined'], $today);
+        $reason = null;
+        if ($sinceRead >= 3) $reason = $m['last_read'] ? "$sinceRead días sin leer" : 'Aún no ha leído';
+        elseif ($sinceContrib >= 7) $reason = "$sinceContrib días sin aportar";
+        if ($reason) $out[] = ['user_id' => (int)$m['id'], 'name' => $m['name'], 'initial' => initialOf($m['name']), 'color' => avatarColor($m['id']), 'reason' => $reason, 'days' => max($sinceRead, $sinceContrib)];
+    }
+    usort($out, fn($a, $b) => $b['days'] <=> $a['days']);
+    return $out;
+}
+
+function groupKpis(PDO $db, $groupId, $today) {
+    [$mon, $sun] = weekRange(0, $today);
+    $members = $db->prepare('SELECT COUNT(*) FROM group_members WHERE group_id = ?');
+    $members->execute([$groupId]);
+    $members = (int)$members->fetchColumn();
+    $reads = $db->prepare('SELECT COUNT(*) FROM daily_readings d INNER JOIN group_members m ON m.user_id = d.user_id AND m.group_id = ?
+        WHERE d.read_at IS NOT NULL AND d.date BETWEEN ? AND ?');
+    $reads->execute([$groupId, $mon, $sun]);
+    $contrib = $db->prepare('SELECT COUNT(*) FROM contributions WHERE group_id = ? AND date = ?');
+    $contrib->execute([$groupId, $today]);
+    $prayers = $db->prepare('SELECT COUNT(*) FROM prayer_requests WHERE group_id = ? AND status = ?');
+    $prayers->execute([$groupId, 'open']);
+    $reports = $db->prepare('SELECT COUNT(*) FROM reports WHERE group_id = ? AND status = ?');
+    $reports->execute([$groupId, 'open']);
+    return ['members' => $members, 'reads_week' => (int)$reads->fetchColumn(), 'reads_possible' => $members * 7,
+        'contributions_today' => (int)$contrib->fetchColumn(), 'open_prayers' => (int)$prayers->fetchColumn(), 'reports_open' => (int)$reports->fetchColumn()];
+}
