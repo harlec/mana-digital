@@ -37,7 +37,11 @@ try {
             WHERE m.user_id = ? ORDER BY m.joined_at DESC');
         $stmt->execute([$userId]);
         $out = [];
-        foreach ($stmt->fetchAll() as $g) $out[] = groupCard($db, $g, $g['role'], $today);
+        foreach ($stmt->fetchAll() as $g) {
+            $card = groupCard($db, $g, $g['role'], $today);
+            $card['open_prayers'] = openPrayersCount($db, $g['id'], $userId, $g['role']);
+            $out[] = $card;
+        }
         jsonResponse(['success' => true, 'groups' => $out]);
     }
 
@@ -133,6 +137,7 @@ try {
 
         $card = groupCard($db, $g, $role, $today);
         $card['invite_code'] = $g['invite_code'];
+        $card['open_prayers'] = openPrayersCount($db, $groupId, $userId, $role);
         jsonResponse(['success' => true, 'group' => $card, 'members' => $members, 'question' => $q->fetchColumn() ?: null, 'recent' => $recent]);
     }
 

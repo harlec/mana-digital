@@ -5,6 +5,9 @@ import { GroupLogo, JOIN_KEY, groupMeta, todayLine } from './shared';
 import { NewGroup } from './NewGroup';
 import { GroupDetail } from './GroupDetail';
 import { Chapter } from './Chapter';
+import { Prayers } from './Prayers';
+import { NewPrayer } from './NewPrayer';
+import { Testimonies } from './Testimonies';
 
 const JoinCard = ({ T, token, code, onDone, onCancel }) => {
     const [g, setG] = useState(null);
@@ -70,8 +73,12 @@ export const GroupsTab = ({ T, token, user, toast }) => {
     const open = (g) => { clearPending(); load(); setScreen({ name: 'group', id: g.id }); };
 
     if (screen.name === 'new') return <NewGroup T={T} token={token} onBack={() => setScreen({ name: 'list' })} onCreated={(g) => { load(); setScreen({ name: 'group', id: g.id }); }} />;
-    if (screen.name === 'group') return <GroupDetail T={T} token={token} id={screen.id} toast={toast} onBack={() => { load(); setScreen({ name: 'list' }); }} onChapter={() => setScreen({ name: 'chapter', id: screen.id })} />;
+    if (screen.name === 'group') return <GroupDetail T={T} token={token} id={screen.id} toast={toast} onBack={() => { load(); setScreen({ name: 'list' }); }} onChapter={() => setScreen({ name: 'chapter', id: screen.id })} onOpen={(name, group) => setScreen({ name, id: screen.id, group })} />;
     if (screen.name === 'chapter') return <Chapter T={T} token={token} id={screen.id} toast={toast} onBack={() => setScreen({ name: 'group', id: screen.id })} />;
+
+    if (screen.name === 'prayers') return <Prayers T={T} token={token} group={screen.group} toast={toast} onBack={() => setScreen({ name: 'group', id: screen.id })} onNew={() => setScreen({ name: 'newprayer', id: screen.id, group: screen.group })} />;
+    if (screen.name === 'newprayer') return <NewPrayer T={T} token={token} group={screen.group} toast={toast} onBack={() => setScreen({ name: 'prayers', id: screen.id, group: screen.group })} onDone={() => setScreen({ name: 'prayers', id: screen.id, group: screen.group })} />;
+    if (screen.name === 'testimonies') return <Testimonies T={T} token={token} group={screen.group} onBack={() => setScreen({ name: 'group', id: screen.id })} />;
 
     if (migration) return <div className="anim-up"><PageTitle T={T}>Comunidad</PageTitle><p style={{ color: T.muted, lineHeight: 1.5 }}>Los grupos estarán disponibles en cuanto se active la actualización en el servidor.</p></div>;
 
@@ -97,6 +104,7 @@ export const GroupsTab = ({ T, token, user, toast }) => {
                         <span style={{ display: 'block', fontFamily: T.serif, fontSize: 20 * T.serifSize }}>{g.name}</span>
                         <span style={{ display: 'block', fontSize: 12, color: T.muted, marginTop: 2 }}>{groupMeta(g)}</span>
                         <span style={{ display: 'block', fontSize: 13, color: T.accentText, marginTop: 4 }}>{todayLine(g)}</span>
+                        {g.open_prayers > 0 && <span style={{ display: 'inline-block', marginTop: 6, padding: '2px 10px', borderRadius: 10, background: '#FBE4EF', color: '#BE185D', fontSize: 12, fontWeight: 700 }}>{g.open_prayers} {g.open_prayers === 1 ? 'petición abierta' : 'peticiones abiertas'}</span>}
                     </span>
                     <Icon n="chevron-right" size={18} style={{ color: T.faint }} />
                 </button>

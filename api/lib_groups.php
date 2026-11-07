@@ -70,3 +70,59 @@ function generateInviteCode(PDO $db) {
     }
     jsonResponse(['success' => false, 'error' => 'Could not generate code'], 500);
 }
+
+// ---------- Fase 3: peticiones ----------
+const PRAYER_KINDS = ['spiritual', 'health', 'family', 'material'];
+const PRAYER_NEEDS = ['prayer', 'encouragement', 'help'];
+const PRAYER_VISIBILITY = ['group', 'leader', 'anonymous'];
+const OFFER_TYPES = ['transfer', 'food', 'goods', 'transport', 'visit', 'other'];
+const STALE_DAYS = 30;
+
+function prayersDb() {
+    $db = groupsDb();
+    try {
+        $db->query('SELECT 1 FROM prayer_requests LIMIT 1');
+    } catch (PDOException $e) {
+        jsonResponse(['success' => false, 'error' => 'prayers_migration_pending'], 503);
+    }
+    return $db;
+}
+
+// Auto-moderación: cuentas bancarias, CCI, teléfonos, enlaces o pedidos de depósito
+function looksRisky($text) {
+    return (bool)preg_match('/(\d[\s.-]?){10,}|\b9\d{8}\b|\bcci\b|cuenta\s+(bancaria|de\s+ahorros|corriente)|deposit[aoe]|https?:\/\/|www\./iu', $text);
+}
+
+// ¿Puede este usuario ver la petición? El autor y los líderes siempre; el resto solo lo no oculto y no reservado al líder.
+function canSeePrayer($p, $userId, $role) {
+    if ((int)$p['user_id'] === (int)$userId || $role === 'leader') return true;
+    return !$p['hidden'] && $p['visibility'] !== 'leader';
+}
+
+function loadPrayer(PDO $db, $id, $userId) {
+    $stmt = $db->prepare('SELECT * FROM prayer_requests WHERE id = ?');
+    $stmt->execute([$id]);
+    $p = $stmt->fetch();
+    if (!$p) jsonResponse(['success' => false, 'error' => 'Not found'], 404);
+    $role = memberRole($db, $p['group_id'], $userId);
+    if (!$role || !canSeePrayer($p, $userId, $role)) jsonResponse(['success' => false, 'error' => 'Not found'], 404);
+    return [$p, $role];
+}
+
+function authorCard($p, $userId, $name) {
+    if ($p['visibility'] === 'anonymous' && (int)$p['user_id'] !== (int)$userId) {
+        return ['author' => 'Anónimo', 'initial' => '?', 'color' => '#6B7280'];
+    }
+    return ['author' => (int)$p['user_id'] === (int)$userId ? 'Tú' : $name, 'initial' => initialOf($name), 'color' => avatarColor($p['user_id'])];
+}
+
+function openPrayersCount(PDO $db, $groupId, $userId, $role) {
+    try {
+        $stmt = $db->prepare('SELECT COUNT(*) FROM prayer_requests WHERE group_id = ? AND status = ?
+            AND (user_id = ? OR ? = 1 OR (hidden = 0 AND visibility <> ?))');
+        $stmt->execute([$groupId, 'open', $userId, $role === 'leader' ? 1 : 0, 'leader']);
+        return (int)$stmt->fetchColumn();
+    } catch (PDOException $e) {
+        return 0;
+    }
+}

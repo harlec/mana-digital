@@ -5,7 +5,7 @@ import { Avatar, INVITE_BASE, Kicker, TopBar, groupMeta, shareInvite, timeLabel 
 
 const Dot = ({ T, on }) => <span style={{ width: 14, height: 14, borderRadius: '50%', background: on ? '#0F9D63' : T.line, display: 'inline-block' }}></span>;
 
-export const GroupDetail = ({ T, token, id, toast, onBack, onChapter }) => {
+export const GroupDetail = ({ T, token, id, toast, onBack, onChapter, onOpen }) => {
     const [data, setData] = useState(null);
     const [error, setError] = useState(false);
     const [question, setQuestion] = useState('');
@@ -75,6 +75,20 @@ export const GroupDetail = ({ T, token, id, toast, onBack, onChapter }) => {
                     <GhostBtn T={T} onClick={() => { setQuestion(data.question || ''); setEditQ(true); }} style={{ width: '100%', marginBottom: 14 }}><Icon n="pin" size={17} />{data.question ? 'Cambiar la pregunta de hoy' : 'Fijar una pregunta para hoy'}</GhostBtn>
                 )
             )}
+
+            <button onClick={() => onOpen('prayers', g)} style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', textAlign: 'left', padding: 16, marginBottom: 10, borderRadius: 22, border: `1px solid ${T.line2}`, background: T.surface, color: T.ink }}>
+                <span style={{ width: 44, height: 44, borderRadius: 14, background: '#FBE4EF', color: '#BE185D', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon n="hand-heart" size={22} /></span>
+                <span style={{ flex: 1 }}>
+                    <span style={{ display: 'block', fontFamily: T.serif, fontSize: 20 * T.serifSize }}>Peticiones y ayuda</span>
+                    <span style={{ display: 'block', fontSize: 13, color: T.muted }}>{g.open_prayers} {g.open_prayers === 1 ? 'abierta' : 'abiertas'}</span>
+                </span>
+                <Icon n="chevron-right" size={18} style={{ color: T.faint }} />
+            </button>
+            <button onClick={() => onOpen('testimonies', g)} style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', textAlign: 'left', padding: 16, marginBottom: 14, borderRadius: 22, border: `1px solid ${T.line2}`, background: T.surface, color: T.ink }}>
+                <span style={{ width: 44, height: 44, borderRadius: 14, background: '#FBF1DC', color: '#8A5A12', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon n="sparkles" size={22} /></span>
+                <span style={{ flex: 1, fontFamily: T.serif, fontSize: 20 * T.serifSize }}>Dios respondió</span>
+                <Icon n="chevron-right" size={18} style={{ color: T.faint }} />
+            </button>
 
             <Card T={T} style={{ padding: 16, marginBottom: 14 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>

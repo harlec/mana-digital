@@ -48,3 +48,20 @@ export const shareInvite = async (g, code) => {
     window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
 };
 export { Icon };
+
+export const KINDS = {
+    spiritual: { label: 'Espiritual', icon: 'flame', bg: '#EEE7F8', fg: '#5A33A8' },
+    health: { label: 'Salud', icon: 'heart-pulse', bg: '#FBE4EF', fg: '#BE185D' },
+    family: { label: 'Familia', icon: 'house', bg: '#FBF1DC', fg: '#8A5A12' },
+    material: { label: 'Material', icon: 'package', bg: '#E3F4EC', fg: '#0F5F43' }
+};
+export const OFFER_TYPES = [
+    ['transfer', 'Yape / Plin'], ['food', 'Comida'], ['goods', 'Ropa o cosas'],
+    ['transport', 'Movilidad'], ['visit', 'Una visita'], ['other', 'Otra ayuda']
+];
+export const offerLabel = (type) => (OFFER_TYPES.find(o => o[0] === type) || [, 'ayuda'])[1];
+
+export const KindTag = ({ kind }) => {
+    const k = KINDS[kind];
+    return <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 10, background: k.bg, color: k.fg, fontSize: 12, fontWeight: 700 }}>{k.label}</span>;
+};
