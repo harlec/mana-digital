@@ -107,6 +107,10 @@ try {
         $data = readJson();
         [$p] = loadPrayer($db, (int)($data['id'] ?? 0), $userId);
         [$on, $n] = toggleReaction($db, 'prayer', $p['id'], $userId, 'praying');
+        if ($on && (int)$p['user_id'] !== (int)$userId) {
+            $who = $p['visibility'] === 'anonymous' ? 'Alguien' : nameOf($db, $userId);
+            pushLater($db, $p['user_id'], 'Están orando por ti', $who . ' oró por tu petición.', '/?go=groups', 'pray:' . $p['id'] . ':' . date('Y-m-d'));
+        }
         jsonResponse(['success' => true, 'i_praying' => $on, 'praying' => $n]);
     }
 
@@ -119,6 +123,9 @@ try {
         $db->prepare('INSERT INTO comments (target_type, target_id, user_id, text, hidden) VALUES (?, ?, ?, ?, ?)')
             ->execute(['prayer', $p['id'], $userId, $text, $risky ? 1 : 0]);
         if ($risky) autoReport($db, $p['group_id'], 'comment', (int)$db->lastInsertId(), 'Posibles datos de cuenta, teléfono o enlace');
+        elseif ((int)$p['user_id'] !== (int)$userId) {
+            pushLater($db, $p['user_id'], 'Un mensaje de aliento', nameOf($db, $userId) . ' te escribió: ' . mb_substr($text, 0, 80), '/?go=groups');
+        }
         jsonResponse(['success' => true], 201);
     }
 
@@ -131,6 +138,7 @@ try {
         if (!in_array($type, OFFER_TYPES, true) || mb_strlen($detail) > 300) jsonResponse(['success' => false, 'error' => 'Invalid offer'], 400);
         $db->prepare('INSERT INTO help_offers (prayer_id, user_id, type, detail) VALUES (?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE detail = VALUES(detail)')->execute([$p['id'], $userId, $type, $detail ?: null]);
+        pushLater($db, $p['user_id'], 'Te ofrecieron ayuda', 'Alguien de tu grupo quiere ayudarte. Ábrelo para verlo; es privado.', '/?go=groups', 'offer:' . $p['id'] . ':' . date('Y-m-d'));
         jsonResponse(['success' => true], 201);
     }
 

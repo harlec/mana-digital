@@ -1,7 +1,7 @@
 // Service Worker para Maná Digital
 // Maneja notificaciones en segundo plano y clic en notificaciones
 
-const CACHE_NAME = 'mana-digital-v5';
+const CACHE_NAME = 'mana-digital-v6';
 const NOTIFICATION_VERSE_KEY = 'pending_notification_verse';
 
 // Instalación del Service Worker
@@ -87,11 +87,37 @@ async function saveVerseForNotification(verse) {
     }
 }
 
+// Notificación push enviada por el servidor (Web Push)
+self.addEventListener('push', (event) => {
+    let d = {};
+    try { d = event.data ? event.data.json() : {}; } catch (e) { d = { body: event.data ? event.data.text() : '' }; }
+    event.waitUntil(self.registration.showNotification(d.title || 'Maná Digital', {
+        body: d.body || '',
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        tag: d.tag || 'mana',
+        data: { url: d.url || '/', push: true },
+        vibrate: [200, 100, 200]
+    }));
+});
+
 // Manejar clic en notificación
 self.addEventListener('notificationclick', (event) => {
     console.log('👆 Clic en notificación');
 
     event.notification.close();
+
+    // Push del servidor: llevar a la pantalla indicada en la URL (?go=...)
+    if (event.notification.data && event.notification.data.push) {
+        const url = event.notification.data.url || '/';
+        const go = new URL(url, self.location.origin).searchParams.get('go');
+        event.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+            const open = list.find(c => c.url.startsWith(self.location.origin));
+            if (open) { open.postMessage({ type: 'PUSH_GO', go }); return open.focus(); }
+            return clients.openWindow(url);
+        }));
+        return;
+    }
 
     const verse = event.notification.data?.verse;
     const url = event.notification.data?.url || '/';

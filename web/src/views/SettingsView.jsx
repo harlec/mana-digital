@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../config';
 import { Card, GhostBtn, Icon, PrimaryBtn, Segmented, Toggle, inputStyle } from '../ui';
+import { PushSettings } from './PushSettings';
 
 // ============ AJUSTES (pantalla) ============
 export const SettingsView = ({ T, settings, token, onUpdate, onClose, onLogout, t, themeMode, setThemeMode }) => {
@@ -60,6 +61,8 @@ export const SettingsView = ({ T, settings, token, onUpdate, onClose, onLogout, 
                     </select>
                 </Row>
             </Section>
+
+            <PushSettings T={T} token={token} />
 
             <Section title={t.reminders}>
                 <Row label={t.notifications} last={!s.notifications_enabled}><Toggle T={T} on={!!s.notifications_enabled} onChange={v => set({ notifications_enabled: v })} /></Row>

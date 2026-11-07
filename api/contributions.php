@@ -87,9 +87,18 @@ try {
         $verse = isset($data['verse']) ? (int)$data['verse'] : null;
         if ($chapter < $day['chapter'] || $chapter > $day['chapter_end']) $chapter = $day['chapter'];
 
-        $db->prepare('INSERT INTO contributions (group_id, user_id, date, book_id, chapter, verse, text) VALUES (?, ?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE chapter = VALUES(chapter), verse = VALUES(verse), text = VALUES(text)')
-            ->execute([$groupId, $userId, $today, $g['book_id'], $chapter, $verse ?: null, $text]);
+        $ins = $db->prepare('INSERT INTO contributions (group_id, user_id, date, book_id, chapter, verse, text) VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE chapter = VALUES(chapter), verse = VALUES(verse), text = VALUES(text)');
+        $ins->execute([$groupId, $userId, $today, $g['book_id'], $chapter, $verse ?: null, $text]);
+        if ($ins->rowCount() === 1) {
+            // Un solo aviso por grupo y día a cada miembro, para no saturar
+            $others = $db->prepare('SELECT user_id FROM group_members WHERE group_id = ? AND user_id <> ?');
+            $others->execute([$groupId, $userId]);
+            $who = nameOf($db, $userId);
+            foreach ($others->fetchAll(PDO::FETCH_COLUMN) as $uid) {
+                pushLater($db, $uid, $g['name'], $who . ' compartió lo que Dios le habló en ' . $day['reference'] . '.', '/?go=groups', 'contrib:' . $groupId . ':' . $today);
+            }
+        }
         jsonResponse(['success' => true], 201);
     }
 
@@ -102,6 +111,9 @@ try {
         if ($on) {
             $db->prepare('INSERT IGNORE INTO reactions (target_type, target_id, user_id, kind) VALUES (?, ?, ?, ?)')
                 ->execute(['contribution', $c['id'], $userId, 'amen']);
+        }
+        if ($on && (int)$c['user_id'] !== (int)$userId) {
+            pushLater($db, $c['user_id'], 'Amén a tu aporte', nameOf($db, $userId) . ' dijo amén a lo que compartiste.', '/?go=groups', 'amen:' . $c['id'] . ':' . date('Y-m-d'));
         }
         $n = $db->prepare('SELECT COUNT(*) FROM reactions WHERE target_type = ? AND target_id = ? AND kind = ?');
         $n->execute(['contribution', $c['id'], 'amen']);

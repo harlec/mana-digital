@@ -46,6 +46,16 @@ export const MainApp = ({ user, token, settings, onLogout, view, setView, onSett
     // Llegó con un enlace de invitación: ir directo a Grupos
     useEffect(() => { try { if (sessionStorage.getItem(JOIN_KEY)) setView('groups'); } catch (e) {} }, []);
 
+    // Abrir la pantalla indicada por una notificación push (al abrir la app o con la app ya abierta)
+    useEffect(() => {
+        const GO = ['read', 'commune', 'examen', 'groups', 'today'];
+        const open = (go) => { if (GO.includes(go)) setView(go); };
+        try { const go = sessionStorage.getItem('mana_go'); if (go) { sessionStorage.removeItem('mana_go'); open(go); } } catch (e) {}
+        const onMsg = (e) => { if (e.data && e.data.type === 'PUSH_GO') open(e.data.go); };
+        if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', onMsg);
+        return () => { if ('serviceWorker' in navigator) navigator.serviceWorker.removeEventListener('message', onMsg); };
+    }, []);
+
     const toast = (msg) => { setToastMsg(msg); setTimeout(() => setToastMsg(null), 2400); };
 
     useEffect(() => {

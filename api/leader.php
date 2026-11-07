@@ -128,6 +128,7 @@ try {
         if ($to === (int)$userId || !memberRole($db, $groupId, $to) || mb_strlen($text) > 300) jsonResponse(['success' => false, 'error' => 'Invalid'], 400);
         $db->prepare('INSERT INTO nudges (group_id, from_user_id, to_user_id, date, kind, message) VALUES (?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE message = VALUES(message)')->execute([$groupId, $userId, $to, $today, 'care', $text]);
+        pushLater($db, $to, nameOf($db, $userId) . ' · ' . getGroup($db, $groupId)['name'], $text, '/');
         jsonResponse(['success' => true]);
     }
 

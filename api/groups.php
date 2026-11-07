@@ -158,8 +158,13 @@ try {
         $to = (int)($data['to_user_id'] ?? 0);
         requireMember($db, $groupId, $userId);
         if ($to === (int)$userId || !memberRole($db, $groupId, $to)) jsonResponse(['success' => false, 'error' => 'Invalid member'], 400);
-        $db->prepare('INSERT IGNORE INTO nudges (group_id, from_user_id, to_user_id, date, kind, message) VALUES (?, ?, ?, ?, ?, ?)')
-            ->execute([$groupId, $userId, $to, $today, 'reminder', NUDGE_TEXT]);
+        $ins = $db->prepare('INSERT IGNORE INTO nudges (group_id, from_user_id, to_user_id, date, kind, message) VALUES (?, ?, ?, ?, ?, ?)');
+        $ins->execute([$groupId, $userId, $to, $today, 'reminder', NUDGE_TEXT]);
+        if ($ins->rowCount() > 0) {
+            $g = getGroup($db, $groupId);
+            $day = groupDay($db, $g, $today);
+            pushLater($db, $to, nameOf($db, $userId) . ' te recuerda en ' . $g['name'], '¿Ya leíste hoy? Te espero en ' . ($day['reference'] ?? $day['book']) . '.', '/?go=read');
+        }
         jsonResponse(['success' => true]);
     }
 

@@ -5,6 +5,7 @@
  */
 
 require_once 'lib_day.php';
+require_once 'lib_push.php';
 
 const AVATAR_COLORS = ['#E8B04B', '#3B82F6', '#14B8A6', '#6B3FBF', '#EF4444', '#DB2777', '#6B7280', '#7C4FD6', '#0F7A55', '#B7791F'];
 const GROUP_TYPES = ['family' => 'Grupo familiar', 'cell' => 'Célula', 'friends' => 'Amigos', 'ministry' => 'Ministerio'];
